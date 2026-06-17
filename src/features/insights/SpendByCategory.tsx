@@ -44,12 +44,19 @@ export function SpendByCategory({ data }: SpendByCategoryProps) {
                   <Cell key={row.category_id} fill={row.category_color} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value: number) => formatINR(value)} />
+              <Tooltip
+                formatter={(value) => formatINR(typeof value === 'number' ? value : 0)}
+              />
             </PieChart>
           </ResponsiveContainer>
           <Stack spacing={1} sx={{ mt: 1 }}>
             {data.map((row) => (
-              <Stack key={row.category_id} direction="row" alignItems="center" spacing={1}>
+              <Stack
+                key={row.category_id}
+                direction="row"
+                spacing={1}
+                sx={{ alignItems: 'center' }}
+              >
                 <Box
                   sx={{
                     width: 10,

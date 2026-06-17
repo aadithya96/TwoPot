@@ -44,7 +44,10 @@ export function MonthlyTrend({ data }: MonthlyTrendProps) {
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="month" tickFormatter={shortMonthLabel} />
             <YAxis tickFormatter={formatThousands} width={48} />
-            <Tooltip formatter={(value: number) => formatINR(value)} labelFormatter={shortMonthLabel} />
+            <Tooltip
+              formatter={(value) => formatINR(typeof value === 'number' ? value : 0)}
+              labelFormatter={(label) => shortMonthLabel(String(label))}
+            />
             <Area
               type="monotone"
               dataKey="total_amount"

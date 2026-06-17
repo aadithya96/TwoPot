@@ -55,7 +55,10 @@ export function PersonContributions({ data, members }: PersonContributionsProps)
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="month" tickFormatter={shortMonthLabel} />
             <YAxis width={48} />
-            <Tooltip formatter={(value: number) => formatINR(value)} labelFormatter={shortMonthLabel} />
+            <Tooltip
+              formatter={(value) => formatINR(typeof value === 'number' ? value : 0)}
+              labelFormatter={(label) => shortMonthLabel(String(label))}
+            />
             <Legend />
             {members.map((member, index) => (
               <Bar
