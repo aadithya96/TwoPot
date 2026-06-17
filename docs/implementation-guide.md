@@ -1,4 +1,4 @@
-# Kosha — Implementation Guide
+# TwoPot — Implementation Guide
 
 > Expense tracking & budgeting PWA for two people. React + Vite + Supabase (self-hosted) on k3s.
 
@@ -31,8 +31,8 @@
 ### 1.1 Scaffold the frontend
 
 ```bash
-npm create vite@latest kosha -- --template react-ts
-cd kosha
+npm create vite@latest twopot -- --template react-ts
+cd twopot
 npm install
 ```
 
@@ -83,7 +83,7 @@ export default defineConfig({
 # .env.local
 VITE_SUPABASE_URL=https://supabase.yourdomain.com
 VITE_SUPABASE_ANON_KEY=your-anon-key
-VITE_APP_URL=https://kosha.yourdomain.com
+VITE_APP_URL=https://twopot.yourdomain.com
 ```
 
 ### Todo — Project Setup
@@ -623,7 +623,7 @@ export const supabase = createClient<Database>(
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
-      storageKey: 'kosha-auth',
+      storageKey: 'twopot-auth',
     },
   }
 )
@@ -1257,8 +1257,8 @@ VitePWA({
   registerType: 'autoUpdate',
   includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
   manifest: {
-    name: 'Kosha',
-    short_name: 'Kosha',
+    name: 'TwoPot',
+    short_name: 'TwoPot',
     description: 'Household expense tracker',
     theme_color: '#6366f1',
     background_color: '#ffffff',
@@ -1314,7 +1314,7 @@ npx pwa-asset-generator logo.svg public/icons \
 <!-- index.html -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Kosha">
+<meta name="apple-mobile-web-app-title" content="TwoPot">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="mask-icon" href="/icons/masked-icon.svg" color="#6366f1">
 ```
@@ -1377,7 +1377,7 @@ export function useInstallPrompt() {
 // src/lib/offlineQueue.ts
 import { openDB } from 'idb'
 
-const db = await openDB('kosha-offline', 1, {
+const db = await openDB('twopot-offline', 1, {
   upgrade(db) {
     db.createObjectStore('pending_expenses', { keyPath: 'localId', autoIncrement: true })
   },
@@ -1801,9 +1801,9 @@ export function InstallBanner() {
     }}>
       <span style={{ flex: 1, color: 'var(--color-text-info)' }}>
         {state === 'ios-prompt' && (
-          <>Tap <strong>Share</strong> → <strong>Add to Home Screen</strong> to install Kosha</>
+          <>Tap <strong>Share</strong> → <strong>Add to Home Screen</strong> to install TwoPot</>
         )}
-        {state === 'android-prompt' && 'Install Kosha for a better experience'}
+        {state === 'android-prompt' && 'Install TwoPot for a better experience'}
       </span>
 
       {state === 'android-prompt' && canInstall && (
@@ -1838,7 +1838,7 @@ export function usePushSetup(userId: string) {
   const requestPermission = useCallback(async () => {
     // Hard gate on iOS — push won't work in browser tab
     if (installState === 'ios-prompt') {
-      toast.info('Install Kosha to your home screen to enable notifications')
+      toast.info('Install TwoPot to your home screen to enable notifications')
       return
     }
 
@@ -2398,26 +2398,26 @@ docker compose up -d
 ### 14.2 Frontend Deployment (k3s)
 
 ```yaml
-# k8s/kosha-frontend.yaml
+# k8s/twopot-frontend.yaml
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kosha-frontend
-  namespace: kosha
+  name: twopot-frontend
+  namespace: twopot
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: kosha-frontend
+      app: twopot-frontend
   template:
     metadata:
       labels:
-        app: kosha-frontend
+        app: twopot-frontend
     spec:
       containers:
-        - name: kosha-frontend
-          image: ghcr.io/yourusername/kosha-frontend:latest
+        - name: twopot-frontend
+          image: ghcr.io/yourusername/twopot-frontend:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 80
@@ -2425,12 +2425,12 @@ spec:
             - name: VITE_SUPABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: kosha-secrets
+                  name: twopot-secrets
                   key: supabase-url
             - name: VITE_SUPABASE_ANON_KEY
               valueFrom:
                 secretKeyRef:
-                  name: kosha-secrets
+                  name: twopot-secrets
                   key: supabase-anon-key
           resources:
             requests:
@@ -2443,11 +2443,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: kosha-frontend
-  namespace: kosha
+  name: twopot-frontend
+  namespace: twopot
 spec:
   selector:
-    app: kosha-frontend
+    app: twopot-frontend
   ports:
     - port: 80
       targetPort: 80
@@ -2455,8 +2455,8 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: kosha-frontend
-  namespace: kosha
+  name: twopot-frontend
+  namespace: twopot
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
@@ -2465,17 +2465,17 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - kosha.yourdomain.com
-      secretName: kosha-tls
+        - twopot.yourdomain.com
+      secretName: twopot-tls
   rules:
-    - host: kosha.yourdomain.com
+    - host: twopot.yourdomain.com
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: kosha-frontend
+                name: twopot-frontend
                 port:
                   number: 80
 ```
@@ -2547,10 +2547,10 @@ spec:
 ### 14.5 Secrets
 
 ```bash
-kubectl create namespace kosha
+kubectl create namespace twopot
 
-kubectl create secret generic kosha-secrets \
-  --namespace kosha \
+kubectl create secret generic twopot-secrets \
+  --namespace twopot \
   --from-literal=supabase-url="https://supabase.yourdomain.com" \
   --from-literal=supabase-anon-key="your-anon-key"
 ```
@@ -2561,7 +2561,7 @@ kubectl create secret generic kosha-secrets \
 |---|---|---|---|
 | Supabase (Docker Compose) | ~1.5 GB | ~0.5 core | ~10 GB |
 | Postgres (bundled) | ~256 MB | ~0.2 core | ~5 GB data |
-| Kosha frontend (k3s) | 64 MB | 50m | — |
+| TwoPot frontend (k3s) | 64 MB | 50m | — |
 | **Total** | ~2 GB | ~0.8 core | ~15 GB |
 
 Well within ODROID-H4+ capacity (16–32 GB RAM, 4–8 core N97/N100).
@@ -2574,13 +2574,13 @@ Well within ODROID-H4+ capacity (16–32 GB RAM, 4–8 core N97/N100).
 - [ ] Set up Nginx reverse proxy or Traefik in front of Supabase services
 - [ ] Install Cert-Manager in k3s cluster
 - [ ] Create `ClusterIssuer` for Let's Encrypt
-- [ ] Create `kosha` namespace in k3s
-- [ ] Create `kosha-secrets` Kubernetes secret
+- [ ] Create `twopot` namespace in k3s
+- [ ] Create `twopot-secrets` Kubernetes secret
 - [ ] Write `Dockerfile` for frontend
 - [ ] Write `nginx.conf` with SPA routing and correct cache headers
 - [ ] Write k8s manifests: `Deployment`, `Service`, `Ingress`
 - [ ] Apply manifests: `kubectl apply -f k8s/`
-- [ ] Verify TLS certificate is issued: `kubectl describe certificate -n kosha`
+- [ ] Verify TLS certificate is issued: `kubectl describe certificate -n twopot`
 - [ ] Set up PersistentVolume for Supabase Postgres data (ZFS volume on ODROID)
 - [ ] Configure automated Postgres backups (pg_dump to local NAS or Backblaze B2)
 - [ ] Set up monitoring: Prometheus + Grafana (already on homelab?) for pod health
@@ -2606,7 +2606,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/kosha-frontend
+  IMAGE_NAME: ${{ github.repository }}/twopot-frontend
 
 jobs:
   test:
@@ -2645,8 +2645,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}/kosha-frontend:latest
-            ghcr.io/${{ github.repository }}/kosha-frontend:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/twopot-frontend:latest
+            ghcr.io/${{ github.repository }}/twopot-frontend:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
@@ -2668,17 +2668,17 @@ jobs:
 
       - name: Update deployment image
         run: |
-          kubectl set image deployment/kosha-frontend \
-            kosha-frontend=ghcr.io/${{ github.repository }}/kosha-frontend:${{ github.sha }} \
-            --namespace kosha
+          kubectl set image deployment/twopot-frontend \
+            twopot-frontend=ghcr.io/${{ github.repository }}/twopot-frontend:${{ github.sha }} \
+            --namespace twopot
 
       - name: Wait for rollout
         run: |
-          kubectl rollout status deployment/kosha-frontend --namespace kosha --timeout=120s
+          kubectl rollout status deployment/twopot-frontend --namespace twopot --timeout=120s
 
       - name: Run smoke test
         run: |
-          curl -f https://kosha.yourdomain.com/health || exit 1
+          curl -f https://twopot.yourdomain.com/health || exit 1
 ```
 
 ### 15.2 Database migrations in CI
@@ -2700,7 +2700,7 @@ jobs:
 
 ```
 main          → production (auto-deploy)
-develop       → staging (deploy to kosha-staging.yourdomain.com)
+develop       → staging (deploy to twopot-staging.yourdomain.com)
 feature/*     → PR only (lint + test)
 ```
 
@@ -2729,7 +2729,7 @@ feature/*     → PR only (lint + test)
 - [ ] Set up self-hosted GitHub Actions runner on ODROID if not exposing kubectl externally
 - [ ] Test full pipeline end-to-end: push to main → test → build → deploy
 - [ ] Add Supabase CLI migration step
-- [ ] Set up staging environment on separate namespace `kosha-staging`
+- [ ] Set up staging environment on separate namespace `twopot-staging`
 - [ ] Add Lighthouse CI check on PRs (PWA score regression detection)
 - [ ] Set up Dependabot for npm and Docker base image updates
 - [ ] Add Docker layer caching to reduce build time

@@ -1,0 +1,17 @@
+import type { Database } from './db'
+
+export type Profile = Database['public']['Tables']['profiles']['Row']
+export type Household = Database['public']['Tables']['households']['Row']
+export type HouseholdMember = Database['public']['Tables']['household_members']['Row']
+export type Category = Database['public']['Tables']['categories']['Row']
+export type Expense = Database['public']['Tables']['expenses']['Row']
+export type ExpenseWithRelations = Expense & {
+  category: Category | null
+  payer: Profile
+}
+export type Budget = Database['public']['Tables']['budgets']['Row']
+export type BudgetUsage = Database['public']['Views']['budget_usage']['Row']
+export type SavingsGoal = Database['public']['Tables']['savings_goals']['Row']
+export type GoalContribution = Database['public']['Tables']['goal_contributions']['Row']
+export type Settlement = Database['public']['Tables']['settlements']['Row']
+export type PushSubscriptionRow = Database['public']['Tables']['push_subscriptions']['Row']

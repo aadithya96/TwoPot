@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: twopot
+  namespace: twopot
+spec:
+  selector:
+    app: twopot
+  ports:
+    - port: 80
+      targetPort: 80
