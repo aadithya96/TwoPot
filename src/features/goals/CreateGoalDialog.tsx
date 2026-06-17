@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Box,
   Button,
@@ -64,17 +64,21 @@ export function CreateGoalDialog({ open, onClose, householdId }: CreateGoalDialo
   const [deadline, setDeadline] = useState('')
   const [icon, setIcon] = useState(ICON_OPTIONS[0].key)
   const [color, setColor] = useState(COLOR_OPTIONS[0])
+  const [wasOpen, setWasOpen] = useState(open)
   const createGoal = useCreateGoal()
 
-  useEffect(() => {
-    if (open) {
-      setName('')
-      setAmountDisplay('')
-      setDeadline('')
-      setIcon(ICON_OPTIONS[0].key)
-      setColor(COLOR_OPTIONS[0])
-    }
-  }, [open])
+  // Reset form fields whenever the dialog transitions from closed to open (React's
+  // recommended "adjust state during render" pattern, avoiding a setState-in-effect).
+  if (open && !wasOpen) {
+    setWasOpen(true)
+    setName('')
+    setAmountDisplay('')
+    setDeadline('')
+    setIcon(ICON_OPTIONS[0].key)
+    setColor(COLOR_OPTIONS[0])
+  } else if (!open && wasOpen) {
+    setWasOpen(false)
+  }
 
   const isValid = name.trim().length > 0 && toStorageAmount(amountDisplay) > 0
 

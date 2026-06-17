@@ -52,7 +52,7 @@ function useCategories(householdId: string | undefined) {
  */
 export function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const [isAddOpen, setIsAddOpen] = useState(false)
+  const [isAddOpen, setIsAddOpen] = useState(() => searchParams.get('action') === 'add')
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set())
 
   const householdId = useHouseholdStore((state) => state.householdId)
@@ -68,7 +68,6 @@ export function HomePage() {
 
   useEffect(() => {
     if (searchParams.get('action') === 'add') {
-      setIsAddOpen(true)
       setSearchParams({})
     }
   }, [searchParams, setSearchParams])

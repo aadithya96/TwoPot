@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Button,
   CircularProgress,
@@ -46,15 +46,19 @@ export function SetBudgetDialog({
     initialUsage ? String(fromStorageAmount(initialUsage.budget_amount)) : ''
   )
   const [rollover, setRollover] = useState(false)
+  const [wasOpen, setWasOpen] = useState(open)
   const setBudget = useSetBudget()
 
-  useEffect(() => {
-    if (open) {
-      setCategoryId(initialUsage?.category_id ?? '')
-      setAmountDisplay(initialUsage ? String(fromStorageAmount(initialUsage.budget_amount)) : '')
-      setRollover(false)
-    }
-  }, [open, initialUsage])
+  // Reset form fields whenever the dialog transitions from closed to open (React's
+  // recommended "adjust state during render" pattern, avoiding a setState-in-effect).
+  if (open && !wasOpen) {
+    setWasOpen(true)
+    setCategoryId(initialUsage?.category_id ?? '')
+    setAmountDisplay(initialUsage ? String(fromStorageAmount(initialUsage.budget_amount)) : '')
+    setRollover(false)
+  } else if (!open && wasOpen) {
+    setWasOpen(false)
+  }
 
   const handleSave = async () => {
     if (!categoryId) return

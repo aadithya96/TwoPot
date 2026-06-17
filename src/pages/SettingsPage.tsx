@@ -68,7 +68,7 @@ export function SettingsPage() {
               <Switch
                 checked={darkMode}
                 onChange={(event) => setDarkMode(event.target.checked)}
-                inputProps={{ 'aria-label': 'Toggle dark mode' }}
+                slotProps={{ input: { 'aria-label': 'Toggle dark mode' } }}
               />
             }
           >

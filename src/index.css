@@ -18,7 +18,10 @@ body,
 
 button,
 a,
-[role='button'] {
+[role='button'],
+input,
+select,
+textarea {
   touch-action: manipulation;
 }
 

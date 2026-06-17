@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Button,
   CircularProgress,
@@ -36,15 +36,19 @@ export function ContributeDialog({ open, onClose, goal, members, averageDailyRat
   const [amountDisplay, setAmountDisplay] = useState('')
   const [userId, setUserId] = useState(members[0]?.id ?? '')
   const [note, setNote] = useState('')
+  const [wasOpen, setWasOpen] = useState(open)
   const contribute = useContribute()
 
-  useEffect(() => {
-    if (open) {
-      setAmountDisplay('')
-      setUserId(members[0]?.id ?? '')
-      setNote('')
-    }
-  }, [open, members])
+  // Reset form fields whenever the dialog transitions from closed to open (React's
+  // recommended "adjust state during render" pattern, avoiding a setState-in-effect).
+  if (open && !wasOpen) {
+    setWasOpen(true)
+    setAmountDisplay('')
+    setUserId(members[0]?.id ?? '')
+    setNote('')
+  } else if (!open && wasOpen) {
+    setWasOpen(false)
+  }
 
   const amount = toStorageAmount(amountDisplay)
   const isValid = amount > 0 && Boolean(userId)
