@@ -9,8 +9,23 @@ import {
   CircularProgress,
 } from '@mui/material'
 import { supabase } from '@/lib/supabase'
-import type { Json } from '@/types/db'
+import type { Database, Json } from '@/types/db'
 import { usePushNotificationActions } from './usePushNotifications'
+
+/**
+ * Minimal typed view over `supabase.from('profiles').update(...)`. The
+ * generated `db.ts` stub's table rows omit a `Relationships` field that
+ * `@supabase/postgrest-js`'s `update<Row>` generic needs to infer `Row`,
+ * which otherwise collapses to `never`. Scoped here rather than editing
+ * `src/types/db.ts`, which this agent does not own.
+ */
+interface ProfilesUpdateClient {
+  from(table: 'profiles'): {
+    update(values: Database['public']['Tables']['profiles']['Update']): {
+      eq(column: 'id', value: string): Promise<{ error: { message: string } | null }>
+    }
+  }
+}
 
 interface NotificationPrefs {
   budgetEightyPercent: boolean
@@ -64,7 +79,8 @@ export function NotificationSettings({ userId, storedPrefs }: NotificationSettin
   const handleToggle = (key: keyof NotificationPrefs): void => {
     const next = { ...prefs, [key]: !prefs[key] }
     setPrefs(next)
-    void supabase
+    const client = supabase as unknown as ProfilesUpdateClient
+    void client
       .from('profiles')
       .update({ notification_prefs: next as unknown as Json })
       .eq('id', userId)
@@ -93,7 +109,7 @@ export function NotificationSettings({ userId, storedPrefs }: NotificationSettin
                 edge="end"
                 checked={prefs[key]}
                 onChange={() => handleToggle(key)}
-                inputProps={{ 'aria-label': label }}
+                slotProps={{ input: { 'aria-label': label } }}
               />
             }
           >

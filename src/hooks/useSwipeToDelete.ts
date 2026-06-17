@@ -20,8 +20,10 @@ export function useSwipeToDelete(onDelete: () => void): {
   const ref = useRef<HTMLDivElement | null>(null)
   const [offsetX, setOffsetX] = useState(0)
   const [isRevealed, setIsRevealed] = useState(false)
-  const onDeleteRef = useRef(onDelete)
-  onDeleteRef.current = onDelete
+  // `onDelete` is intentionally not invoked here — see JSDoc above; kept in
+  // the signature so callers' intent is documented and future revisions
+  // (e.g. swipe-past-max auto-delete) can wire it in without an API change.
+  void onDelete
 
   useEffect(() => {
     const element = ref.current

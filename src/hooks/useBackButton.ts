@@ -7,7 +7,10 @@ import { useEffect, useRef } from 'react'
  */
 export function useBackButton(isOpen: boolean, onClose: () => void): void {
   const onCloseRef = useRef(onClose)
-  onCloseRef.current = onClose
+
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
 
   useEffect(() => {
     if (!isOpen) return

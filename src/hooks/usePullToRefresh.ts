@@ -13,7 +13,10 @@ export function usePullToRefresh(onRefresh: () => Promise<void> | void): {
   const ref = useRef<HTMLDivElement | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const onRefreshRef = useRef(onRefresh)
-  onRefreshRef.current = onRefresh
+
+  useEffect(() => {
+    onRefreshRef.current = onRefresh
+  }, [onRefresh])
 
   useEffect(() => {
     const element = ref.current
