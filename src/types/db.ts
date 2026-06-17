@@ -128,7 +128,7 @@ export interface Database {
           household_id: string
           category_id: string
           amount: number
-          period: 'monthly'
+          period: 'monthly' | 'yearly'
           rollover: boolean
           created_at: string
         }
@@ -137,7 +137,7 @@ export interface Database {
           household_id: string
           category_id: string
           amount: number
-          period?: 'monthly'
+          period?: 'monthly' | 'yearly'
           rollover?: boolean
           created_at?: string
         }
@@ -266,6 +266,10 @@ export interface Database {
         Args: { code: string }
         Returns: string
       }
+      seed_default_categories: {
+        Args: { hid: string }
+        Returns: void
+      }
       increment_goal_amount: {
         Args: { goal_id: string; delta: number }
         Returns: void
@@ -278,22 +282,13 @@ export interface Database {
           amount: number
         }[]
       }
-      monthly_by_category: {
-        Args: { household_id: string; period_month: string }
-        Returns: {
-          category_id: string
-          category_name: string
-          category_color: string
-          total: number
-        }[]
+      is_household_member: {
+        Args: { hid: string }
+        Returns: boolean
       }
-      monthly_trend: {
-        Args: { household_id: string }
-        Returns: { period_month: string; total: number }[]
-      }
-      person_contributions: {
-        Args: { household_id: string; period_month: string }
-        Returns: { user_id: string; total: number }[]
+      process_budget_rollover: {
+        Args: Record<PropertyKey, never>
+        Returns: void
       }
     }
   }

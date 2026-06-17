@@ -407,21 +407,33 @@ create policy "push: own" on public.push_subscriptions for all
 
 ### Todo — Database Schema
 
-- [ ] Create all migrations as numbered SQL files: `supabase/migrations/001_init.sql` etc.
-- [ ] Implement `profiles` table + `handle_new_user` trigger
-- [ ] Implement `households` + `household_members` tables
-- [ ] Implement `categories` table + `seed_default_categories` function
-- [ ] Implement `expenses` table with all columns, constraints, indexes
-- [ ] Implement `budgets` table with unique indexes
-- [ ] Implement `savings_goals` + `goal_contributions` tables
-- [ ] Implement `settlements` table
-- [ ] Implement `push_subscriptions` table
-- [ ] Enable RLS and write policies for all tables
-- [ ] Write `is_household_member` helper function
+- [x] Create all migrations as numbered SQL files: `supabase/migrations/001_init.sql` etc.
+- [x] Implement `profiles` table + `handle_new_user` trigger
+- [x] Implement `households` + `household_members` tables
+- [x] Implement `categories` table + `seed_default_categories` function
+- [x] Implement `expenses` table with all columns, constraints, indexes
+- [x] Implement `budgets` table with unique indexes
+- [x] Implement `savings_goals` + `goal_contributions` tables
+- [x] Implement `settlements` table
+- [x] Implement `push_subscriptions` table
+- [x] Enable RLS and write policies for all tables
+- [x] Write `is_household_member` helper function
 - [ ] Test all policies with two separate auth users in Supabase Studio
-- [ ] Add `updated_at` trigger to `expenses`, `savings_goals`
-- [ ] Seed default categories when a new household is created (trigger or function call)
-- [ ] Write TypeScript types matching every table (`src/types/db.ts`) — use `supabase gen types typescript`
+- [x] Add `updated_at` trigger to `expenses`, `savings_goals`
+- [ ] Seed default categories when a new household is created (trigger or function call) — `seed_default_categories(hid)` exists but is not yet wired to a household-creation trigger; call it from the onboarding flow when Phase 1 implements household creation
+- [x] Write TypeScript types matching every table (`src/types/db.ts`) — hand-written stub kept in sync with migrations; regenerate with `supabase gen types typescript` once a local instance exists
+
+### Deviations
+
+The implementation differs from the schema sketched above in this section:
+
+- `expenses`: no `currency` or `next_due_date` column; `expense_date` renamed to `date`; `created_by` column dropped (use `paid_by`); `owner` is a `text` check constraint, not a Postgres `enum`, for simpler migrations/rollbacks; `split_type` values are `'equal' | 'custom' | 'payer_covers'` (not `'50_50' | 'custom' | 'solo'`); `goal_id` added (uuid, FK added in `006_savings_goals.sql` once `savings_goals` exists).
+- `budgets`: no `valid_from`/`valid_until`/`rollover_balance` columns — one persistent row per `(household_id, category_id, period)`. Unique index reflects this. `process_budget_rollover` (see §6.1 deviation) folds unused amount directly into the row's `amount` instead of into a separate `rollover_balance`.
+- `savings_goals`: no `description` column; `is_completed` dropped in favor of `completed_at is not null`; default `icon`/`color` are `'Flag'` / `'#6366f1'` (MUI icon name, matching categories' convention) rather than `'piggy-bank'` / `'#10b981'`.
+- `goal_contributions`: column is `user_id` (FK `profiles`), not `contributed_by`; `created_at`, not `contributed_at`.
+- `settlements`: columns are `owed_by`/`owed_to`/`settled`/`created_at`, not `from_user_id`/`to_user_id`/`is_settled`; no `note` column.
+- `push_subscriptions`: no `user_agent` column.
+- `categories.icon` stores `@mui/icons-material` export names (e.g. `'RestaurantOutlined'`), not lucide-react names — the app uses MUI, not Tailwind/lucide, despite what earlier sections of this guide say.
 
 ---
 
@@ -592,17 +604,17 @@ export function useMarkSettled(householdId: string) {
 
 ### Todo — Settlement Logic
 
-- [ ] Create `monthly_settlement` view in Supabase
-- [ ] Create `compute_settlement` RPC function
-- [ ] Handle edge case: only one member has paid expenses that month
-- [ ] Handle edge case: `solo` split type — payer owes nothing, counterpart owes nothing
-- [ ] Handle edge case: net_amount = 0 (all square — show celebratory state in UI)
+- [x] Create `monthly_settlement` view in Supabase
+- [x] Create `compute_settlement` RPC function
+- [x] Handle edge case: only one member has paid expenses that month (the other member's `owed_amount` is simply 0 — nets out correctly)
+- [x] Handle edge case: `payer_covers` split type (renamed from `solo`) — payer owes nothing, counterpart owes nothing
+- [x] Handle edge case: net_amount = 0 (all square — `compute_settlement` returns `amount = 0`; UI celebratory state still to build)
 - [ ] Write TypeScript hook `useSettlement`
 - [ ] Write TypeScript hook `useMarkSettled`
 - [ ] Build `SettlementCard` component — shows who owes whom, net amount, "Mark as Settled" button
 - [ ] Build `SettlementHistory` component — past months with settled/unsettled status
 - [ ] Unit test the SQL function with known fixture data (psql or pgTAP)
-- [ ] Handle rollover budgets in settlement (exclude from person-to-person flow)
+- [ ] Handle rollover budgets in settlement (exclude from person-to-person flow) — rollover budgets are category-level only and never feed `monthly_settlement`, so no special-casing was needed
 
 ---
 
@@ -833,7 +845,7 @@ Deno.serve(async () => {
 - [ ] Add keyboard shortcut `N` to open add expense on desktop
 - [ ] Implement recurring expense toggle + recurrence rule selector (daily/weekly/monthly)
 - [ ] Build `RecurringExpensesList` — shows all active recurring entries with next due date
-- [ ] Build Supabase Edge Function for recurring expense cron job
+- [x] Build Supabase Edge Function for recurring expense cron job (`supabase/functions/recurring-expenses` — monthly recurrence only for now; `recurrence_rule` must be the literal string `'monthly'`)
 - [ ] Set up pg_cron in self-hosted Supabase to trigger the Edge Function monthly
 - [ ] Write integration tests for CRUD operations
 
@@ -921,9 +933,15 @@ $$;
 - [ ] Implement `useBudgetAlerts` hook
 - [ ] Show inline alert banner in `BudgetPage` when any budget ≥ 80%
 - [ ] Build `RolloverToggle` in budget settings
-- [ ] Create `budget_usage` view in Supabase
-- [ ] Create `process_budget_rollover` function
+- [x] Create `budget_usage` view in Supabase
+- [x] Create `process_budget_rollover` function
 - [ ] Set up pg_cron to call rollover function at month-end
+
+### Deviations (§6.1 / §6.3)
+
+`budgets` has no per-month history rows (see §2 deviations), so `budget_usage` and `process_budget_rollover` were adapted accordingly:
+- `budget_usage` joins `budgets` + `categories` + `expenses`, filtering expenses to the current calendar month, and exposes `spent_amount` (not `spent`/`remaining`/`pct_used` — compute those client-side from `budget_amount` and `spent_amount`).
+- `process_budget_rollover()` takes no arguments (operates over all households' rollover-enabled budgets in one pass, since it's meant to run once globally via a scheduler) and adds last month's unused amount directly onto the budget row's `amount` column, rather than maintaining a separate `rollover_balance`.
 - [ ] Handle "no budget set" state — prompt to set one
 - [ ] Add budget context to `AddExpenseSheet` — show remaining when user selects a category
 
@@ -1039,7 +1057,7 @@ $$;
 - [ ] Build `CreateGoalDialog` — name, target amount, deadline (optional), icon, color picker
 - [ ] Build `ContributeDialog` — amount input, who is contributing, optional note
 - [ ] Implement `useGoals`, `useCreateGoal`, `useContribute` hooks
-- [ ] Create `increment_goal_amount` RPC function
+- [x] Create `increment_goal_amount` RPC function
 - [ ] Add "goal completed" confetti animation when target is reached
 - [ ] Build `GoalContributionHistory` — timeline of contributions per goal
 - [ ] Show projected completion date on each goal card
@@ -1526,7 +1544,7 @@ self.addEventListener('notificationclick', (event) => {
 - [ ] Implement `subscribeToPush` and `unsubscribeFromPush` functions
 - [ ] Build `NotificationSettings` page — toggle per notification type
 - [ ] Request notification permission on first login (after user interaction)
-- [ ] Implement `send-push` Edge Function
+- [x] Implement `send-push` Edge Function
 - [ ] Trigger push on budget 80% threshold (via Postgres function + Edge Function)
 - [ ] Trigger push on budget exceeded
 - [ ] Trigger push on partner large expense (configurable ₹ threshold)
@@ -1535,7 +1553,7 @@ self.addEventListener('notificationclick', (event) => {
 - [ ] Add push handler to service worker
 - [ ] Test on Android Chrome (push works)
 - [ ] Test on iOS Safari 17+ (push works for installed PWAs)
-- [ ] Handle expired/invalid push subscriptions (remove from DB on 410 response)
+- [x] Handle expired/invalid push subscriptions (remove from DB on 410 response) — also handles 404
 
 ---
 
@@ -2741,7 +2759,7 @@ feature/*     → PR only (lint + test)
 ### Phase 1 — Core (target: 2 weeks)
 
 - [ ] Project scaffold + tooling
-- [ ] Database schema (all tables, RLS, triggers)
+- [x] Database schema (all tables, RLS, triggers)
 - [ ] Google OAuth + household invite flow
 - [ ] Add / edit / delete expenses (CRUD)
 - [ ] Expense list by month
