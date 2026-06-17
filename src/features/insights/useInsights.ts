@@ -16,8 +16,9 @@ export interface MonthlyTrendRow {
   total_amount: number
 }
 
-/** One row of the `person_contributions` RPC result. */
+/** One row of the `person_contributions` RPC result: one member's total for one month. */
 export interface PersonContributionRow {
+  month: string
   user_id: string
   display_name: string
   total_amount: number
@@ -39,7 +40,7 @@ interface InsightsRpcClient {
   ): Promise<{ data: MonthlyTrendRow[] | null; error: { message: string } | null }>
   rpc(
     fn: 'person_contributions',
-    args: { p_household_id: string; p_month: string }
+    args: { p_household_id: string }
   ): Promise<{ data: PersonContributionRow[] | null; error: { message: string } | null }>
 }
 
@@ -79,7 +80,12 @@ export function useMonthlyTrend(householdId: string | undefined): UseQueryResult
   })
 }
 
-/** Fetches per-member spend totals for `householdId` in `month`. */
+/**
+ * Fetches each household member's monthly spend totals (used to render a
+ * grouped bar chart of contributions over time). `month` selects the React
+ * Query cache key's scope (e.g. the currently viewed month) even though the
+ * RPC itself returns multi-month history.
+ */
 export function usePersonContributions(
   householdId: string | undefined,
   month: string
@@ -89,7 +95,6 @@ export function usePersonContributions(
     queryFn: async () => {
       const { data, error } = await insightsClient.rpc('person_contributions', {
         p_household_id: householdId as string,
-        p_month: month,
       })
       if (error) throw new Error(error.message)
       return data ?? []

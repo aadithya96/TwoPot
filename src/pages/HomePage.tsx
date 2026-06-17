@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useSearchParams, Link as RouterLink } from 'react-router-dom'
 import {
   Box,
@@ -15,13 +16,35 @@ import {
   Skeleton,
 } from '@mui/material'
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined'
+import { supabase } from '@/lib/supabase'
+import { queryKeys } from '@/lib/queryKeys'
 import { useHouseholdStore } from '@/stores/householdStore'
 import { formatMonth, monthKey } from '@/lib/dates'
 import { formatINR } from '@/lib/currency'
 import { useExpenses, AddExpenseSheet, ExpenseRow } from '@/features/expenses'
-import { useBudgetUsage } from '@/features/budgets/useBudgets'
+import { useBudgetUsage } from '@/features/budgets'
 import { GoalCard, useGoals } from '@/features/goals'
-import { SettlementCard } from '@/features/settlement'
+import { SettlementCard, useSettlement } from '@/features/settlement'
+import { useCurrentUser } from '@/features/auth'
+import type { Category } from '@/types/app'
+
+/** Fetches the household's expense categories, needed by the add-expense sheet. */
+function useCategories(householdId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.categories(householdId ?? 'anonymous'),
+    queryFn: async (): Promise<Category[]> => {
+      if (!householdId) return []
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('household_id', householdId)
+        .order('name', { ascending: true })
+      if (error) throw error
+      return data ?? []
+    },
+    enabled: Boolean(householdId),
+  })
+}
 
 /**
  * Dashboard: current-month spend summary, member contribution chips, settlement card,
@@ -36,8 +59,12 @@ export function HomePage() {
   const members = useHouseholdStore((state) => state.members)
   const month = monthKey()
 
+  const { data: currentUser } = useCurrentUser()
   const { data: expenses, isLoading: isExpensesLoading } = useExpenses(householdId ?? undefined, month)
   const { data: budgetUsage } = useBudgetUsage(householdId ?? undefined)
+  const { data: categories } = useCategories(householdId ?? undefined)
+  const { data: goals, isLoading: isGoalsLoading } = useGoals(householdId ?? undefined)
+  const { data: settlement } = useSettlement(householdId ?? undefined, month)
 
   useEffect(() => {
     if (searchParams.get('action') === 'add') {
@@ -118,7 +145,15 @@ export function HomePage() {
         </CardContent>
       </Card>
 
-      {householdId && hasSharedExpenses && <SettlementCard householdId={householdId} periodMonth={month} />}
+      {householdId && hasSharedExpenses && (
+        <SettlementCard
+          settlement={settlement ?? null}
+          members={members}
+          householdId={householdId}
+          periodMonth={month}
+          isSettled={false}
+        />
+      )}
 
       {budgetAlerts.length > 0 && (
         <Stack spacing={1}>
@@ -128,9 +163,7 @@ export function HomePage() {
               <Alert
                 key={row.category_id}
                 severity={row.spent_amount >= row.budget_amount ? 'error' : 'warning'}
-                onClose={() =>
-                  setDismissedAlerts((prev) => new Set(prev).add(row.category_id))
-                }
+                onClose={() => setDismissedAlerts((prev) => new Set(prev).add(row.category_id))}
               >
                 {row.category_name}: {formatINR(row.spent_amount)} of {formatINR(row.budget_amount)} spent
               </Alert>
@@ -158,7 +191,14 @@ export function HomePage() {
         ) : (
           <Stack spacing={1} sx={{ mt: 1 }}>
             {recentExpenses.map((expense) => (
-              <ExpenseRow key={expense.id} expense={expense} condensed />
+              <ExpenseRow
+                key={expense.id}
+                expense={expense}
+                currentUserId={currentUser?.id ?? ''}
+                householdId={householdId ?? ''}
+                month={month}
+                categories={categories ?? []}
+              />
             ))}
           </Stack>
         )}
@@ -171,7 +211,25 @@ export function HomePage() {
             See all
           </Link>
         </Stack>
-        <GoalsRow householdId={householdId} />
+        {isGoalsLoading ? (
+          <Stack direction="row" spacing={1} sx={{ mt: 1, overflowX: 'auto' }}>
+            {[0, 1].map((i) => (
+              <Skeleton key={i} variant="rounded" width={200} height={160} />
+            ))}
+          </Stack>
+        ) : !goals || goals.length === 0 ? (
+          <Typography variant="bodyMedium" color="text.secondary" sx={{ mt: 1 }}>
+            No savings goals yet.
+          </Typography>
+        ) : (
+          <Stack direction="row" spacing={1.5} sx={{ mt: 1, overflowX: 'auto', pb: 1 }}>
+            {goals.map((goal) => (
+              <Box key={goal.id} sx={{ minWidth: 220 }}>
+                <GoalCard goal={goal} members={members} />
+              </Box>
+            ))}
+          </Stack>
+        )}
       </Box>
 
       <Fab
@@ -183,43 +241,11 @@ export function HomePage() {
         <AddOutlinedIcon />
       </Fab>
 
-      {householdId && (
-        <AddExpenseSheet open={isAddOpen} onClose={() => setIsAddOpen(false)} householdId={householdId} />
-      )}
+      <AddExpenseSheet
+        open={isAddOpen}
+        onClose={() => setIsAddOpen(false)}
+        categories={categories ?? []}
+      />
     </Box>
   )
 }
-
-/** Horizontal-scroll strip of compact goal cards for the dashboard, isolated so its hook usage stays optional. */
-function GoalsRow({ householdId }: { householdId: string | null }) {
-  const { data: goals, isLoading } = useGoals(householdId ?? undefined)
-
-  if (isLoading) {
-    return (
-      <Stack direction="row" spacing={1} sx={{ mt: 1, overflowX: 'auto' }}>
-        {[0, 1].map((i) => (
-          <Skeleton key={i} variant="rounded" width={160} height={100} />
-        ))}
-      </Stack>
-    )
-  }
-
-  if (!goals || goals.length === 0) {
-    return (
-      <Typography variant="bodyMedium" color="text.secondary" sx={{ mt: 1 }}>
-        No savings goals yet.
-      </Typography>
-    )
-  }
-
-  return (
-    <Stack direction="row" spacing={1.5} sx={{ mt: 1, overflowX: 'auto', pb: 1 }}>
-      {goals.map((goal) => (
-        <Box key={goal.id} sx={{ minWidth: 160 }}>
-          <GoalCard goal={goal} compact />
-        </Box>
-      ))}
-    </Stack>
-  )
-}
-
