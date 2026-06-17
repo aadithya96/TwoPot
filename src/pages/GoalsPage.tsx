@@ -1,10 +1,6 @@
-import { Box, Typography } from '@mui/material'
+import { GoalsPage as GoalsFeaturePage } from '@/features/goals'
 
-/** Placeholder Goals page. Replaced by feature agents with full implementation. */
+/** Thin route wrapper rendering the goals feature's page. */
 export function GoalsPage() {
-  return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="titleLarge">Goals</Typography>
-    </Box>
-  )
+  return <GoalsFeaturePage />
 }
