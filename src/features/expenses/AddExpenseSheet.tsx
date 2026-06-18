@@ -15,9 +15,12 @@ import {
   Typography,
   CircularProgress,
 } from '@mui/material'
+import { useSnackbar } from 'notistack'
 import { AmountField, CategoryPicker, SplitSelector } from '@/components/forms'
 import { expenseSchema, type ExpenseFormValues } from './expenseSchema'
 import { useAddExpense, useUpdateExpense } from './useExpenses'
+import { useScanReceipt } from './useScanReceipt'
+import { ReceiptUploader } from './ReceiptUploader'
 import { useBackButton } from '@/hooks/useBackButton'
 import { useVisualViewport } from '@/hooks/useVisualViewport'
 import { useHouseholdStore } from '@/stores/householdStore'
@@ -48,6 +51,7 @@ const DEFAULT_VALUES: ExpenseFormValues = {
   description: '',
   notes: null,
   isRecurring: false,
+  receiptUrl: null,
 }
 
 /** Bottom-sheet form for creating or editing an expense, using React Hook Form + Zod validation. */
@@ -57,15 +61,45 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
   const { height: viewportHeight } = useVisualViewport()
   const addExpense = useAddExpense()
   const updateExpense = useUpdateExpense()
+  const scanReceipt = useScanReceipt()
+  const { enqueueSnackbar } = useSnackbar()
 
   useBackButton(open, onClose)
 
-  const { control, handleSubmit, watch, reset } = useForm<ExpenseFormValues>({
+  const { control, handleSubmit, watch, reset, getValues, setValue } = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
     defaultValues: { ...DEFAULT_VALUES, ...initialValues },
   })
 
   const owner = watch('owner')
+
+  // Scan a freshly uploaded receipt and prefill only fields the user hasn't
+  // already set, so it never overwrites manual input. Failures are non-fatal —
+  // the photo stays attached and the form can be completed by hand.
+  const scanAndPrefill = async (receiptUrl: string) => {
+    try {
+      const result = await scanReceipt.mutateAsync(receiptUrl)
+      const filled: string[] = []
+      if (result.amountRupees && getValues('amount') === 0) {
+        setValue('amount', Math.round(result.amountRupees * 100), { shouldValidate: true })
+        filled.push('amount')
+      }
+      if (result.date) {
+        setValue('date', result.date, { shouldValidate: true })
+        filled.push('date')
+      }
+      if (result.merchant && !getValues('description')?.trim()) {
+        setValue('description', result.merchant, { shouldValidate: true })
+        filled.push('description')
+      }
+      enqueueSnackbar(
+        filled.length > 0 ? `Filled ${filled.join(', ')} from receipt` : 'No details found on receipt',
+        { variant: filled.length > 0 ? 'success' : 'info' }
+      )
+    } catch {
+      enqueueSnackbar('Could not scan receipt — enter details manually', { variant: 'warning' })
+    }
+  }
 
   const onSubmit = handleSubmit(async (values) => {
     if (!householdId) return
@@ -139,6 +173,35 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
               />
             )}
           />
+
+          <Box>
+            <Typography variant="labelLarge" sx={{ mb: 1, display: 'block' }}>
+              Receipt
+            </Typography>
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+              <Controller
+                name="receiptUrl"
+                control={control}
+                render={({ field }) => (
+                  <ReceiptUploader
+                    value={field.value}
+                    onChange={(url) => {
+                      field.onChange(url)
+                      if (url) void scanAndPrefill(url)
+                    }}
+                  />
+                )}
+              />
+              {scanReceipt.isPending && (
+                <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                  <CircularProgress size={16} />
+                  <Typography variant="bodyMedium" color="text.secondary">
+                    Scanning receipt…
+                  </Typography>
+                </Stack>
+              )}
+            </Stack>
+          </Box>
 
           <Box>
             <Typography variant="labelLarge" sx={{ mb: 1, display: 'block' }}>

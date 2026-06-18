@@ -20,6 +20,7 @@ export interface ExpenseInput {
   splitType: 'equal' | 'custom' | 'payer_covers'
   splitPctA: number | null
   isRecurring: boolean
+  receiptUrl: string | null
 }
 
 /** Fetches all expenses for a household within the given "YYYY-MM" month, newest first. */
@@ -67,6 +68,7 @@ export function useAddExpense() {
           split_type: input.splitType,
           split_pct_a: input.splitPctA,
           is_recurring: input.isRecurring,
+          receipt_url: input.receiptUrl,
         })
         .select('*')
         .single()
@@ -101,6 +103,7 @@ export function useUpdateExpense() {
           split_type: input.splitType,
           split_pct_a: input.splitPctA,
           is_recurring: input.isRecurring,
+          receipt_url: input.receiptUrl,
         })
         .eq('id', id)
         .select('*')

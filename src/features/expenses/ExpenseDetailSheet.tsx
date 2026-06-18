@@ -67,6 +67,7 @@ export function ExpenseDetailSheet({
     description: expense.description,
     notes: expense.notes,
     isRecurring: expense.is_recurring,
+    receiptUrl: expense.receipt_url,
   }
 
   return (

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams, Link as RouterLink } from 'react-router-dom'
+import { useSearchParams, useNavigate, Link as RouterLink } from 'react-router-dom'
 import {
   Box,
   Card,
@@ -24,7 +24,9 @@ import { useBudgetUsage } from '@/features/budgets'
 import { GoalCard, useGoals } from '@/features/goals'
 import { SettlementCard, useIsSettled, useSettlement } from '@/features/settlement'
 import { useCurrentUser } from '@/features/auth'
-import { fabRightOffset } from '@/lib/layout'
+import { SetupChecklist, type SetupStep } from '@/features/home/SetupChecklist'
+
+const SETUP_DISMISSED_KEY = 'twopot:setupDismissed'
 
 /**
  * Dashboard: current-month spend summary, member contribution chips, settlement card,
@@ -32,8 +34,12 @@ import { fabRightOffset } from '@/lib/layout'
  */
 export function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
   const [isAddOpen, setIsAddOpen] = useState(() => searchParams.get('action') === 'add')
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set())
+  const [isSetupDismissed, setIsSetupDismissed] = useState(
+    () => localStorage.getItem(SETUP_DISMISSED_KEY) === '1'
+  )
 
   const householdId = useHouseholdStore((state) => state.householdId)
   const members = useHouseholdStore((state) => state.members)
@@ -86,8 +92,65 @@ export function HomePage() {
 
   const recentExpenses = useMemo(() => (expenses ?? []).slice(0, 5), [expenses])
 
+  const setupSteps = useMemo<SetupStep[]>(
+    () => [
+      {
+        key: 'expense',
+        label: 'Add your first expense',
+        description: 'Track what you spend to see it here.',
+        done: (expenses?.length ?? 0) > 0,
+        actionLabel: 'Add',
+        onAction: () => setIsAddOpen(true),
+      },
+      {
+        key: 'budget',
+        label: 'Set a budget',
+        description: 'Cap spending per category and get alerts.',
+        done: (budgetUsage ?? []).some((row) => row.budget_amount > 0),
+        actionLabel: 'Set up',
+        onAction: () => navigate('/budgets'),
+      },
+      {
+        key: 'goal',
+        label: 'Create a savings goal',
+        description: 'Save towards something together.',
+        done: (goals?.length ?? 0) > 0,
+        actionLabel: 'Create',
+        onAction: () => navigate('/goals'),
+      },
+      {
+        key: 'partner',
+        label: 'Invite your partner',
+        description: 'Share expenses, budgets, and goals.',
+        done: members.length > 1,
+        actionLabel: 'Invite',
+        onAction: () => navigate('/settings'),
+      },
+    ],
+    [expenses, budgetUsage, goals, members, navigate]
+  )
+
+  const isSetupComplete = setupSteps.every((step) => step.done)
+  const showSetup = !isSetupDismissed && !isSetupComplete
+
+  const dismissSetup = () => {
+    localStorage.setItem(SETUP_DISMISSED_KEY, '1')
+    setIsSetupDismissed(true)
+  }
+
   return (
-    <Box sx={{ p: 2, pb: 12, display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <Box
+      sx={{
+        p: { xs: 2, md: 0 },
+        pt: { md: 3 },
+        pb: { xs: 12, md: 0 },
+        display: 'flex',
+        flexDirection: 'column',
+        gap: { xs: 2, md: 3 },
+      }}
+    >
+      {showSetup && <SetupChecklist steps={setupSteps} onDismiss={dismissSetup} />}
+
       <Card elevation={1}>
         <CardContent>
           <Typography variant="titleMedium" color="text.secondary">
@@ -151,6 +214,14 @@ export function HomePage() {
         </Stack>
       )}
 
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+          gap: { xs: 2, md: 3 },
+          alignItems: 'start',
+        }}
+      >
       <Box>
         <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
           <Typography variant="titleMedium">Recent expenses</Typography>
@@ -211,12 +282,13 @@ export function HomePage() {
           </Stack>
         )}
       </Box>
+      </Box>
 
       <Fab
         color="primary"
         aria-label="Add expense"
         onClick={() => setIsAddOpen(true)}
-        sx={{ position: 'fixed', bottom: 88, right: fabRightOffset }}
+        sx={{ position: 'fixed', bottom: { xs: 88, md: 32 }, right: { xs: 16, md: 32 } }}
       >
         <AddOutlinedIcon />
       </Fab>
