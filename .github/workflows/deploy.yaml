@@ -8,7 +8,62 @@ env:
   IMAGE_NAME: ghcr.io/${{ github.repository }}
 
 jobs:
+  # Fail fast (before any migration / build / deploy work) if a secret the
+  # application or pipeline needs is missing. Required secrets abort the run;
+  # optional ones only warn so degraded features are visible in the log.
+  preflight:
+    runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      VITE_APP_URL: ${{ secrets.VITE_APP_URL }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+      TS_OAUTH_CLIENT_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+      TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
+      VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
+      VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+    steps:
+      - name: Validate secrets
+        run: |
+          set -uo pipefail
+          missing=0
+          require() { [ -n "${2:-}" ] || { echo "::error::Required secret $1 is not set"; missing=1; }; }
+          warn()    { [ -n "${2:-}" ] || echo "::warning::Optional secret $1 not set — $3"; }
+
+          # Required: app cannot build/connect or pipeline cannot deploy without these.
+          require VITE_SUPABASE_URL        "$VITE_SUPABASE_URL"
+          require VITE_SUPABASE_ANON_KEY   "$VITE_SUPABASE_ANON_KEY"
+          require VITE_APP_URL             "$VITE_APP_URL"
+          require SUPABASE_ACCESS_TOKEN    "$SUPABASE_ACCESS_TOKEN"
+          require SUPABASE_PROJECT_REF     "$SUPABASE_PROJECT_REF"
+          require SUPABASE_DB_PASSWORD     "$SUPABASE_DB_PASSWORD"
+          require KUBE_CONFIG              "$KUBE_CONFIG"
+          require TS_OAUTH_CLIENT_ID       "$TS_OAUTH_CLIENT_ID"
+          require TS_OAUTH_SECRET          "$TS_OAUTH_SECRET"
+
+          # Optional: feature degrades gracefully if absent.
+          warn VITE_VAPID_PUBLIC_KEY  "$VITE_VAPID_PUBLIC_KEY"  "web push subscription disabled in the frontend"
+          warn ANTHROPIC_API_KEY      "$ANTHROPIC_API_KEY"      "AI receipt scan / quick-add autofill disabled"
+          warn VAPID_SUBJECT          "$VAPID_SUBJECT"          "push sending (send-push) disabled"
+          warn VAPID_PRIVATE_KEY      "$VAPID_PRIVATE_KEY"      "push sending (send-push) disabled"
+          warn SUPABASE_SERVICE_ROLE_KEY "$SUPABASE_SERVICE_ROLE_KEY" "twopot-supabase cluster secret will carry an empty service-role key"
+          warn GHCR_PULL_TOKEN        "$GHCR_PULL_TOKEN"        "image pulls fall back to the ephemeral GITHUB_TOKEN"
+
+          if [ "$missing" -ne 0 ]; then
+            echo "::error::One or more required secrets are missing; aborting before deploy."
+            exit 1
+          fi
+          echo "All required secrets present."
+
   migrate:
+    needs: preflight
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6.0.3

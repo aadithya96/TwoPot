@@ -137,35 +137,44 @@ scheduler.
 
 On push to `main`:
 
-1. **migrate** — `supabase db push` applies pending migrations.
-2. **build-and-deploy** — type-check, lint, test → deploy edge functions and set
+1. **preflight** — validates that every required secret is set and aborts the
+   run before any work if one is missing (optional secrets only emit a warning,
+   so degraded features are visible in the log). This guarantees the app never
+   ships with, e.g., an empty Supabase URL.
+2. **migrate** — `supabase db push` applies pending migrations.
+3. **build-and-deploy** — type-check, lint, test → deploy edge functions and set
    their secrets → build & push the Docker image to GHCR → connect to Tailscale →
    create the namespace and cluster secrets → `kubectl apply -f k8s/` →
    `rollout restart` and wait for `rollout status` (the job fails if pods don't
    become ready, e.g. on an image-pull error).
 
-### Required GitHub Actions secrets
+### GitHub Actions secrets
+
+The `preflight` job enforces this list: **required** secrets abort the run if
+unset; **optional** ones only warn (and disable the noted feature).
 
 Cluster / connectivity:
 
-- `KUBE_CONFIG` — base64 of the k3s kubeconfig, server pointing at the VM's Tailscale address
-- `TS_OAUTH_CLIENT_ID`, `TS_OAUTH_SECRET` — Tailscale OAuth client (`tag:ci`)
-- `GHCR_PULL_TOKEN` — *(optional, recommended)* classic PAT with `read:packages` for the image-pull secret
+- `KUBE_CONFIG` *(required)* — base64 of the k3s kubeconfig, server pointing at the VM's Tailscale address
+- `TS_OAUTH_CLIENT_ID`, `TS_OAUTH_SECRET` *(required)* — Tailscale OAuth client (`tag:ci`)
+- `GHCR_PULL_TOKEN` *(optional, recommended)* — classic PAT with `read:packages` for the image-pull secret
 
 Frontend build (`VITE_*`, inlined at build time):
 
-- `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_APP_URL`, `VITE_VAPID_PUBLIC_KEY`
+- `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_APP_URL` *(required)*
+- `VITE_VAPID_PUBLIC_KEY` *(optional — web push disabled if unset)*
 
 Supabase project + migrations:
 
-- `SUPABASE_ACCESS_TOKEN` — personal access token (Account → Access Tokens)
-- `SUPABASE_PROJECT_REF` — the target project's ref id
-- `SUPABASE_DB_PASSWORD` — database password (for `db push`)
-- `SUPABASE_SERVICE_ROLE_KEY` — service-role key (goes into the `twopot-supabase` cluster secret)
+- `SUPABASE_ACCESS_TOKEN` *(required)* — personal access token (Account → Access Tokens)
+- `SUPABASE_PROJECT_REF` *(required)* — the target project's ref id
+- `SUPABASE_DB_PASSWORD` *(required)* — database password (for `db push`)
+- `SUPABASE_SERVICE_ROLE_KEY` *(optional)* — service-role key for the `twopot-supabase` cluster secret (functions get theirs auto-injected)
 
-Edge function secrets (set on the Supabase project):
+Edge function secrets, all *(optional)* — set on the Supabase project:
 
-- `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` *(optional)*, `VAPID_SUBJECT`, `VAPID_PRIVATE_KEY`
+- `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` (default `claude-haiku-4-5-20251001`) — AI autofill
+- `VAPID_SUBJECT`, `VAPID_PRIVATE_KEY` — push sending
 
 > The image is pushed to GHCR using the built-in `GITHUB_TOKEN`; no separate
 > registry username/password secret is needed.
