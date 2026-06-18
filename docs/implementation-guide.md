@@ -1251,17 +1251,21 @@ group by p.id, p.display_name;
 
 ### Todo — Insights & Charts
 
-- [ ] Build `InsightsPage` with month selector
-- [ ] Build `SpendByCategory` donut chart (Recharts `PieChart`)
-- [ ] Build `MonthlyTrend` line chart (Recharts `LineChart`) — last 6 months
-- [ ] Build `PersonContributions` grouped bar chart
+- [x] Build `InsightsPage` with month selector
+- [x] Build `SpendByCategory` donut chart (Recharts `PieChart`)
+- [x] Build `MonthlyTrend` line chart (Recharts `LineChart`) — last 6 months
+- [x] Build `PersonContributions` grouped bar chart
 - [ ] Build `TopCategories` list — ranked by spend with delta vs last month
-- [ ] Create all three SQL RPC functions
-- [ ] Implement React Query hooks for each chart dataset
-- [ ] Build `StatCard` components — total spend, largest category, avg daily spend
+- [x] Create all three SQL RPC functions — `011_insights.sql`
+- [x] Implement React Query hooks for each chart dataset
+- [x] Build `StatCard` components — total spend, largest category, avg daily spend
 - [ ] Add empty state illustrations for months with no data
-- [ ] Make all charts responsive (recharts `ResponsiveContainer`)
+- [x] Make all charts responsive (recharts `ResponsiveContainer`)
 - [ ] (v2) Add YTD summary view
+
+### Deviations (§10)
+
+`monthly_by_category`, `monthly_trend`, and `person_contributions` take a `p_household_id uuid` and (for `monthly_by_category`) a `p_month text` in `'YYYY-MM'` form, not the `$1`/`$2`/`$3` positional params sketched above. `monthly_trend` and `person_contributions` always return the trailing 6 months (current month inclusive) rather than taking explicit date-range args, since the UI always renders a fixed 6-month window.
 
 ---
 

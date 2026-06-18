@@ -24,29 +24,7 @@ export interface PersonContributionRow {
   total_amount: number
 }
 
-/**
- * Minimal typed view over `supabase.rpc` for insights functions that are not
- * (yet) declared in the generated `Database['public']['Functions']` map.
- * Scoped to this module to avoid touching `src/types/db.ts`.
- */
-interface InsightsRpcClient {
-  rpc(
-    fn: 'monthly_by_category',
-    args: { p_household_id: string; p_month: string }
-  ): Promise<{ data: MonthlyByCategoryRow[] | null; error: { message: string } | null }>
-  rpc(
-    fn: 'monthly_trend',
-    args: { p_household_id: string }
-  ): Promise<{ data: MonthlyTrendRow[] | null; error: { message: string } | null }>
-  rpc(
-    fn: 'person_contributions',
-    args: { p_household_id: string }
-  ): Promise<{ data: PersonContributionRow[] | null; error: { message: string } | null }>
-}
-
-const insightsClient = supabase as unknown as InsightsRpcClient
-
-/** Fetches per-category spend totals for `householdId` in `month` (YYYY-MM-DD or YYYY-MM). */
+/** Fetches per-category spend totals for `householdId` in `month` (YYYY-MM). */
 export function useMonthlyByCategory(
   householdId: string | undefined,
   month: string
@@ -54,7 +32,7 @@ export function useMonthlyByCategory(
   return useQuery({
     queryKey: queryKeys.monthlyByCategory(householdId ?? 'none', month),
     queryFn: async () => {
-      const { data, error } = await insightsClient.rpc('monthly_by_category', {
+      const { data, error } = await supabase.rpc('monthly_by_category', {
         p_household_id: householdId as string,
         p_month: month,
       })
@@ -70,7 +48,7 @@ export function useMonthlyTrend(householdId: string | undefined): UseQueryResult
   return useQuery({
     queryKey: queryKeys.monthlyTrend(householdId ?? 'none'),
     queryFn: async () => {
-      const { data, error } = await insightsClient.rpc('monthly_trend', {
+      const { data, error } = await supabase.rpc('monthly_trend', {
         p_household_id: householdId as string,
       })
       if (error) throw new Error(error.message)
@@ -93,7 +71,7 @@ export function usePersonContributions(
   return useQuery({
     queryKey: queryKeys.personContributions(householdId ?? 'none', month),
     queryFn: async () => {
-      const { data, error } = await insightsClient.rpc('person_contributions', {
+      const { data, error } = await supabase.rpc('person_contributions', {
         p_household_id: householdId as string,
       })
       if (error) throw new Error(error.message)

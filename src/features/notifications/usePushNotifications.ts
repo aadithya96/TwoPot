@@ -2,24 +2,7 @@ import { useState } from 'react'
 import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
-import type { Database } from '@/types/db'
 import type { PushSubscriptionRow } from '@/types/app'
-
-/**
- * Minimal typed view over `supabase.from('push_subscriptions').upsert(...)`.
- * The generated `db.ts` stub's table rows omit a `Relationships` field that
- * `@supabase/postgrest-js`'s mutation generics need to infer `Row`, which
- * otherwise collapses to `never`. Scoped here rather than editing
- * `src/types/db.ts`, which this agent does not own.
- */
-interface PushSubscriptionsUpsertClient {
-  from(table: 'push_subscriptions'): {
-    upsert(
-      values: Database['public']['Tables']['push_subscriptions']['Insert'],
-      options: { onConflict: string }
-    ): Promise<{ error: { message: string } | null }>
-  }
-}
 
 function base64UrlToUint8Array(base64Url: string): Uint8Array<ArrayBuffer> {
   const padding = '='.repeat((4 - (base64Url.length % 4)) % 4)
@@ -77,8 +60,7 @@ export async function subscribeToPush(userId: string): Promise<void> {
     throw new Error('Push subscription is missing encryption keys.')
   }
 
-  const client = supabase as unknown as PushSubscriptionsUpsertClient
-  const { error } = await client.from('push_subscriptions').upsert(
+  const { error } = await supabase.from('push_subscriptions').upsert(
     {
       user_id: userId,
       endpoint: subscription.endpoint,

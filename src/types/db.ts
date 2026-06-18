@@ -437,6 +437,31 @@ export interface Database {
         Args: Record<PropertyKey, never>
         Returns: void
       }
+      monthly_by_category: {
+        Args: { p_household_id: string; p_month: string }
+        Returns: {
+          category_id: string
+          category_name: string
+          category_color: string
+          total_amount: number
+        }[]
+      }
+      monthly_trend: {
+        Args: { p_household_id: string }
+        Returns: {
+          month: string
+          total_amount: number
+        }[]
+      }
+      person_contributions: {
+        Args: { p_household_id: string }
+        Returns: {
+          month: string
+          user_id: string
+          display_name: string
+          total_amount: number
+        }[]
+      }
     }
   }
 }
