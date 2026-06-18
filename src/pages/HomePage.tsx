@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { useSearchParams, Link as RouterLink } from 'react-router-dom'
 import {
   Box,
@@ -16,35 +15,15 @@ import {
   Skeleton,
 } from '@mui/material'
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined'
-import { supabase } from '@/lib/supabase'
-import { queryKeys } from '@/lib/queryKeys'
 import { useHouseholdStore } from '@/stores/householdStore'
 import { formatMonth, monthKey } from '@/lib/dates'
 import { formatINR } from '@/lib/currency'
+import { useCategories } from '@/hooks/useCategories'
 import { useExpenses, AddExpenseSheet, ExpenseRow } from '@/features/expenses'
 import { useBudgetUsage } from '@/features/budgets'
 import { GoalCard, useGoals } from '@/features/goals'
-import { SettlementCard, useSettlement } from '@/features/settlement'
+import { SettlementCard, useIsSettled, useSettlement } from '@/features/settlement'
 import { useCurrentUser } from '@/features/auth'
-import type { Category } from '@/types/app'
-
-/** Fetches the household's expense categories, needed by the add-expense sheet. */
-function useCategories(householdId: string | undefined) {
-  return useQuery({
-    queryKey: queryKeys.categories(householdId ?? 'anonymous'),
-    queryFn: async (): Promise<Category[]> => {
-      if (!householdId) return []
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('household_id', householdId)
-        .order('name', { ascending: true })
-      if (error) throw error
-      return data ?? []
-    },
-    enabled: Boolean(householdId),
-  })
-}
 
 /**
  * Dashboard: current-month spend summary, member contribution chips, settlement card,
@@ -65,6 +44,7 @@ export function HomePage() {
   const { data: categories } = useCategories(householdId ?? undefined)
   const { data: goals, isLoading: isGoalsLoading } = useGoals(householdId ?? undefined)
   const { data: settlement } = useSettlement(householdId ?? undefined, month)
+  const { data: isSettled } = useIsSettled(householdId ?? undefined, month)
 
   useEffect(() => {
     if (searchParams.get('action') === 'add') {
@@ -150,7 +130,7 @@ export function HomePage() {
           members={members}
           householdId={householdId}
           periodMonth={month}
-          isSettled={false}
+          isSettled={isSettled ?? false}
         />
       )}
 
@@ -171,7 +151,7 @@ export function HomePage() {
       )}
 
       <Box>
-        <Stack direction="row" justifyContent="space-between" alignItems="baseline">
+        <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
           <Typography variant="titleMedium">Recent expenses</Typography>
           <Link component={RouterLink} to="/expenses" variant="labelLarge">
             See all
@@ -204,7 +184,7 @@ export function HomePage() {
       </Box>
 
       <Box>
-        <Stack direction="row" justifyContent="space-between" alignItems="baseline">
+        <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
           <Typography variant="titleMedium">Goals</Typography>
           <Link component={RouterLink} to="/goals" variant="labelLarge">
             See all

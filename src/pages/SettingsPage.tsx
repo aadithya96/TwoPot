@@ -52,7 +52,7 @@ export function SettingsPage() {
     <Box sx={{ p: 2, pb: 12, display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Card>
         <CardContent>
-          <Stack direction="row" spacing={2} alignItems="center">
+          <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
             <Avatar src={avatarUrl} sx={{ width: 56, height: 56 }}>
               {displayName[0]}
             </Avatar>
@@ -89,7 +89,7 @@ export function SettingsPage() {
 
       <Card>
         <CardContent>
-          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1 }}>
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', mb: 1 }}>
             <GroupOutlinedIcon />
             <Typography variant="titleMedium">Household</Typography>
           </Stack>

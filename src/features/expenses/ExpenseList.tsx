@@ -36,7 +36,7 @@ export function ExpenseList({ householdId, currentUserId, categories }: ExpenseL
 
   return (
     <Box>
-      <Stack direction="row" alignItems="center" justifyContent="center" spacing={1} sx={{ py: 1 }}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'center', py: 1 }}>
         <IconButton onClick={() => setMonth((current) => shiftMonth(current, -1))} aria-label="Previous month">
           <ChevronLeftIcon />
         </IconButton>

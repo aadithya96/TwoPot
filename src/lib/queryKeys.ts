@@ -12,6 +12,8 @@ export const queryKeys = {
   goalContributions: (goalId: string) => ['goalContributions', goalId] as const,
   settlement: (householdId: string, periodMonth: string) =>
     ['settlement', householdId, periodMonth] as const,
+  settlementRecord: (householdId: string, periodMonth: string) =>
+    ['settlementRecord', householdId, periodMonth] as const,
   settlementHistory: (householdId: string) => ['settlementHistory', householdId] as const,
   monthlyByCategory: (householdId: string, month: string) =>
     ['monthlyByCategory', householdId, month] as const,

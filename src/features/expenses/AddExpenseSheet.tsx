@@ -256,7 +256,7 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
             name="isRecurring"
             control={control}
             render={({ field }) => (
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
                 <Typography variant="bodyLarge">Recurring expense</Typography>
                 <Switch checked={field.value} onChange={(event) => field.onChange(event.target.checked)} />
               </Stack>

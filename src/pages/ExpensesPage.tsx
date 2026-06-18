@@ -1,33 +1,12 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { Box, Tabs, Tab, Fab, Skeleton } from '@mui/material'
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined'
-import { supabase } from '@/lib/supabase'
-import { queryKeys } from '@/lib/queryKeys'
 import { useHouseholdStore } from '@/stores/householdStore'
+import { useCategories } from '@/hooks/useCategories'
 import { ExpenseList, RecurringList, AddExpenseSheet } from '@/features/expenses'
 import { useCurrentUser } from '@/features/auth'
-import type { Category } from '@/types/app'
 
 type ExpensesTab = 'all' | 'recurring'
-
-/** Fetches the household's expense categories, needed by the expense list and add sheet. */
-function useCategories(householdId: string | undefined) {
-  return useQuery({
-    queryKey: queryKeys.categories(householdId ?? 'anonymous'),
-    queryFn: async (): Promise<Category[]> => {
-      if (!householdId) return []
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('household_id', householdId)
-        .order('name', { ascending: true })
-      if (error) throw error
-      return data ?? []
-    },
-    enabled: Boolean(householdId),
-  })
-}
 
 /** Expenses screen: toggles between the full expense list and the recurring-expenses view, with an add FAB. */
 export function ExpensesPage() {

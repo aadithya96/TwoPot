@@ -25,6 +25,15 @@ export interface Database {
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>
+        Relationships: [
+          {
+            foreignKeyName: 'profiles_id_fkey'
+            columns: ['id']
+            isOneToOne: true
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+        ]
       }
       households: {
         Row: {
@@ -42,6 +51,7 @@ export interface Database {
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['households']['Insert']>
+        Relationships: []
       }
       household_members: {
         Row: {
@@ -57,6 +67,22 @@ export interface Database {
           joined_at?: string
         }
         Update: Partial<Database['public']['Tables']['household_members']['Insert']>
+        Relationships: [
+          {
+            foreignKeyName: 'household_members_household_id_fkey'
+            columns: ['household_id']
+            isOneToOne: false
+            referencedRelation: 'households'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'household_members_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
       }
       categories: {
         Row: {
@@ -78,6 +104,15 @@ export interface Database {
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['categories']['Insert']>
+        Relationships: [
+          {
+            foreignKeyName: 'categories_household_id_fkey'
+            columns: ['household_id']
+            isOneToOne: false
+            referencedRelation: 'households'
+            referencedColumns: ['id']
+          },
+        ]
       }
       expenses: {
         Row: {
@@ -121,6 +156,43 @@ export interface Database {
           updated_at?: string
         }
         Update: Partial<Database['public']['Tables']['expenses']['Insert']>
+        Relationships: [
+          {
+            foreignKeyName: 'expenses_household_id_fkey'
+            columns: ['household_id']
+            isOneToOne: false
+            referencedRelation: 'households'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'expenses_category_id_fkey'
+            columns: ['category_id']
+            isOneToOne: false
+            referencedRelation: 'categories'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'expenses_paid_by_fkey'
+            columns: ['paid_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'expenses_personal_user_id_fkey'
+            columns: ['personal_user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'expenses_goal_id_fkey'
+            columns: ['goal_id']
+            isOneToOne: false
+            referencedRelation: 'savings_goals'
+            referencedColumns: ['id']
+          },
+        ]
       }
       budgets: {
         Row: {
@@ -142,6 +214,22 @@ export interface Database {
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['budgets']['Insert']>
+        Relationships: [
+          {
+            foreignKeyName: 'budgets_household_id_fkey'
+            columns: ['household_id']
+            isOneToOne: false
+            referencedRelation: 'households'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'budgets_category_id_fkey'
+            columns: ['category_id']
+            isOneToOne: false
+            referencedRelation: 'categories'
+            referencedColumns: ['id']
+          },
+        ]
       }
       savings_goals: {
         Row: {
@@ -169,6 +257,15 @@ export interface Database {
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['savings_goals']['Insert']>
+        Relationships: [
+          {
+            foreignKeyName: 'savings_goals_household_id_fkey'
+            columns: ['household_id']
+            isOneToOne: false
+            referencedRelation: 'households'
+            referencedColumns: ['id']
+          },
+        ]
       }
       goal_contributions: {
         Row: {
@@ -188,6 +285,22 @@ export interface Database {
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['goal_contributions']['Insert']>
+        Relationships: [
+          {
+            foreignKeyName: 'goal_contributions_goal_id_fkey'
+            columns: ['goal_id']
+            isOneToOne: false
+            referencedRelation: 'savings_goals'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'goal_contributions_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
       }
       settlements: {
         Row: {
@@ -213,6 +326,29 @@ export interface Database {
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['settlements']['Insert']>
+        Relationships: [
+          {
+            foreignKeyName: 'settlements_household_id_fkey'
+            columns: ['household_id']
+            isOneToOne: false
+            referencedRelation: 'households'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'settlements_owed_by_fkey'
+            columns: ['owed_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'settlements_owed_to_fkey'
+            columns: ['owed_to']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
       }
       push_subscriptions: {
         Row: {
@@ -232,6 +368,15 @@ export interface Database {
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['push_subscriptions']['Insert']>
+        Relationships: [
+          {
+            foreignKeyName: 'push_subscriptions_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
       }
     }
     Views: {
@@ -246,6 +391,7 @@ export interface Database {
           spent_amount: number
           period_month: string
         }
+        Relationships: []
       }
       monthly_settlement: {
         Row: {
@@ -255,6 +401,7 @@ export interface Database {
           owed_to: string
           amount: number
         }
+        Relationships: []
       }
     }
     Functions: {

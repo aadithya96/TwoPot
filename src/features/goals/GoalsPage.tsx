@@ -27,7 +27,7 @@ export function GoalsPage() {
           ))}
         </Box>
       ) : (goals ?? []).length === 0 ? (
-        <Stack spacing={1} alignItems="center" sx={{ py: 8 }}>
+        <Stack spacing={1} sx={{ alignItems: 'center', py: 8 }}>
           <Typography variant="titleMedium">No savings goals yet</Typography>
           <Typography variant="bodyMedium" color="text.secondary" align="center">
             Tap + to start saving towards something together.

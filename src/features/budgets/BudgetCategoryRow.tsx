@@ -42,8 +42,8 @@ export function BudgetCategoryRow({ usage, householdId, categories }: BudgetCate
         }}
       >
         <Stack spacing={0.75} sx={{ py: 1.5 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Stack direction="row" spacing={1} alignItems="center">
+          <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
               <Typography variant="bodyLarge" component="span">
                 {usage.category_icon}
               </Typography>
@@ -55,7 +55,7 @@ export function BudgetCategoryRow({ usage, householdId, categories }: BudgetCate
               {formatINR(usage.spent_amount)} / {formatINR(usage.budget_amount)}
             </Typography>
           </Stack>
-          <Stack direction="row" spacing={1.5} alignItems="center">
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
             <LinearProgress
               variant="determinate"
               value={Math.min(percent, 100)}

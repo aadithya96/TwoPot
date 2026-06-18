@@ -35,7 +35,7 @@ export function GoalCard({ goal, members }: GoalCardProps) {
         <Box sx={{ height: 8, bgcolor: goal.color }} />
         <CardContent>
           <Stack spacing={1.5}>
-            <Stack direction="row" spacing={1} alignItems="center">
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
               <Typography variant="bodyLarge" component="span">
                 {goal.icon}
               </Typography>
@@ -48,7 +48,7 @@ export function GoalCard({ goal, members }: GoalCardProps) {
               {formatINR(goal.current_amount)} of {formatINR(goal.target_amount)}
             </Typography>
 
-            <Stack direction="row" spacing={1.5} alignItems="center">
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
               <LinearProgress
                 variant="determinate"
                 value={percent}

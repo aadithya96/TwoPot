@@ -81,7 +81,7 @@ export function ExpenseDetailSheet({
             {formatRelativeDate(expense.date)}
           </Typography>
 
-          <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 2 }}>
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mt: 2 }}>
             <Avatar src={expense.payer.avatar_url ?? undefined} sx={{ width: 24, height: 24 }}>
               {expense.payer.display_name[0]}
             </Avatar>

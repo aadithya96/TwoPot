@@ -32,6 +32,28 @@ export function useSettlement(
   })
 }
 
+/** Looks up whether a household/month's settlement has already been marked settled. */
+export function useIsSettled(
+  householdId: string | undefined,
+  periodMonth: string
+): UseQueryResult<boolean> {
+  return useQuery({
+    queryKey: queryKeys.settlementRecord(householdId ?? 'anonymous', periodMonth),
+    queryFn: async (): Promise<boolean> => {
+      if (!householdId) return false
+      const { data, error } = await supabase
+        .from('settlements')
+        .select('settled')
+        .eq('household_id', householdId)
+        .eq('period_month', periodMonth)
+        .maybeSingle()
+      if (error) throw error
+      return data?.settled ?? false
+    },
+    enabled: Boolean(householdId),
+  })
+}
+
 /** Input for marking a period's settlement as settled. */
 export interface MarkSettledInput {
   householdId: string
@@ -69,6 +91,9 @@ export function useMarkSettled() {
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.settlement(variables.householdId, variables.periodMonth),
+      })
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.settlementRecord(variables.householdId, variables.periodMonth),
       })
       void queryClient.invalidateQueries({ queryKey: queryKeys.settlementHistory(variables.householdId) })
     },

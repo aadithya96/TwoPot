@@ -44,7 +44,7 @@ export function SettlementCard({ settlement, members, householdId, periodMonth, 
     return (
       <Card>
         <CardContent>
-          <Stack direction="row" spacing={1.5} alignItems="center">
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
             <CheckCircle color="success" />
             <Typography variant="titleMedium">All square for {monthLabel}!</Typography>
           </Stack>
@@ -73,13 +73,13 @@ export function SettlementCard({ settlement, members, householdId, periodMonth, 
       <Card>
         <CardContent>
           <Stack spacing={2}>
-            <Stack direction="row" spacing={2} alignItems="center" justifyContent="center">
-              <Stack alignItems="center" spacing={0.5}>
+            <Stack direction="row" spacing={2} sx={{ alignItems: 'center', justifyContent: 'center' }}>
+              <Stack spacing={0.5} sx={{ alignItems: 'center' }}>
                 <Avatar src={debtor?.avatar_url ?? undefined}>{debtor?.display_name?.[0]}</Avatar>
                 <Typography variant="labelSmall">{debtor?.display_name ?? 'Unknown'}</Typography>
               </Stack>
               <ArrowForward color="action" />
-              <Stack alignItems="center" spacing={0.5}>
+              <Stack spacing={0.5} sx={{ alignItems: 'center' }}>
                 <Avatar src={creditor?.avatar_url ?? undefined}>{creditor?.display_name?.[0]}</Avatar>
                 <Typography variant="labelSmall">{creditor?.display_name ?? 'Unknown'}</Typography>
               </Stack>
