@@ -27,5 +27,6 @@ _Coming soon._
 
 ## Stack
 
-React 19, Vite, TypeScript (strict), MUI v6 (MD3), Supabase JS v2, React Query
-v5, Zustand, React Hook Form + Zod, Recharts, React Router v6, vite-plugin-pwa.
+React 19, Vite, TypeScript (strict), MUI v9 (MD3), Supabase JS v2, React Query
+v5, Zustand v5, React Hook Form + Zod v4, Recharts v3, React Router v7,
+vite-plugin-pwa.
