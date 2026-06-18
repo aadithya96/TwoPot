@@ -77,17 +77,14 @@ export function useCreateHousehold() {
     mutationFn: async (name: string): Promise<{ household: Household; inviteCode: string }> => {
       if (!userId) throw new Error('Not signed in')
 
+      // Create the household and the creator's owner-membership atomically via
+      // a security-definer RPC. Doing the two inserts client-side would fail:
+      // the household read-back is filtered by an RLS policy that requires a
+      // membership row which doesn't exist yet at insert time.
       const { data: household, error: householdError } = await supabase
-        .from('households')
-        .insert({ name })
-        .select('*')
-        .single()
+        .rpc('create_household', { name })
+        .single<Household>()
       if (householdError) throw householdError
-
-      const { error: memberError } = await supabase
-        .from('household_members')
-        .insert({ household_id: household.id, user_id: userId, role: 'owner' })
-      if (memberError) throw memberError
 
       const { error: seedError } = await supabase.rpc('seed_default_categories', {
         hid: household.id,

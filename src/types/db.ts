@@ -413,6 +413,10 @@ export interface Database {
         Args: { code: string }
         Returns: string
       }
+      create_household: {
+        Args: { name: string }
+        Returns: Database['public']['Tables']['households']['Row']
+      }
       seed_default_categories: {
         Args: { hid: string }
         Returns: void
