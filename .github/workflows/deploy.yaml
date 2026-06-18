@@ -45,12 +45,6 @@ jobs:
       - run: pnpm run type-check
       - run: pnpm run lint
       - run: pnpm run test
-      - run: pnpm run build
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          VITE_APP_URL: ${{ secrets.VITE_APP_URL }}
-          VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
 
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@v1
@@ -80,6 +74,11 @@ jobs:
           context: .
           push: true
           tags: ${{ env.IMAGE_NAME  }}:latest
+          build-args: |
+            VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}
+            VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
+            VITE_APP_URL=${{ secrets.VITE_APP_URL }}
+            VITE_VAPID_PUBLIC_KEY=${{ secrets.VITE_VAPID_PUBLIC_KEY }}
 
       - name: Configure kubeconfig
         env:
