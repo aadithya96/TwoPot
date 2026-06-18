@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams, Link as RouterLink } from 'react-router-dom'
+import { useSearchParams, useNavigate, Link as RouterLink } from 'react-router-dom'
 import {
   Box,
   Card,
@@ -24,6 +24,9 @@ import { useBudgetUsage } from '@/features/budgets'
 import { GoalCard, useGoals } from '@/features/goals'
 import { SettlementCard, useIsSettled, useSettlement } from '@/features/settlement'
 import { useCurrentUser } from '@/features/auth'
+import { SetupChecklist, type SetupStep } from '@/features/home/SetupChecklist'
+
+const SETUP_DISMISSED_KEY = 'twopot:setupDismissed'
 
 /**
  * Dashboard: current-month spend summary, member contribution chips, settlement card,
@@ -31,8 +34,12 @@ import { useCurrentUser } from '@/features/auth'
  */
 export function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
   const [isAddOpen, setIsAddOpen] = useState(() => searchParams.get('action') === 'add')
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set())
+  const [isSetupDismissed, setIsSetupDismissed] = useState(
+    () => localStorage.getItem(SETUP_DISMISSED_KEY) === '1'
+  )
 
   const householdId = useHouseholdStore((state) => state.householdId)
   const members = useHouseholdStore((state) => state.members)
@@ -85,6 +92,52 @@ export function HomePage() {
 
   const recentExpenses = useMemo(() => (expenses ?? []).slice(0, 5), [expenses])
 
+  const setupSteps = useMemo<SetupStep[]>(
+    () => [
+      {
+        key: 'expense',
+        label: 'Add your first expense',
+        description: 'Track what you spend to see it here.',
+        done: (expenses?.length ?? 0) > 0,
+        actionLabel: 'Add',
+        onAction: () => setIsAddOpen(true),
+      },
+      {
+        key: 'budget',
+        label: 'Set a budget',
+        description: 'Cap spending per category and get alerts.',
+        done: (budgetUsage ?? []).some((row) => row.budget_amount > 0),
+        actionLabel: 'Set up',
+        onAction: () => navigate('/budgets'),
+      },
+      {
+        key: 'goal',
+        label: 'Create a savings goal',
+        description: 'Save towards something together.',
+        done: (goals?.length ?? 0) > 0,
+        actionLabel: 'Create',
+        onAction: () => navigate('/goals'),
+      },
+      {
+        key: 'partner',
+        label: 'Invite your partner',
+        description: 'Share expenses, budgets, and goals.',
+        done: members.length > 1,
+        actionLabel: 'Invite',
+        onAction: () => navigate('/settings'),
+      },
+    ],
+    [expenses, budgetUsage, goals, members, navigate]
+  )
+
+  const isSetupComplete = setupSteps.every((step) => step.done)
+  const showSetup = !isSetupDismissed && !isSetupComplete
+
+  const dismissSetup = () => {
+    localStorage.setItem(SETUP_DISMISSED_KEY, '1')
+    setIsSetupDismissed(true)
+  }
+
   return (
     <Box
       sx={{
@@ -96,6 +149,8 @@ export function HomePage() {
         gap: { xs: 2, md: 3 },
       }}
     >
+      {showSetup && <SetupChecklist steps={setupSteps} onDismiss={dismissSetup} />}
+
       <Card elevation={1}>
         <CardContent>
           <Typography variant="titleMedium" color="text.secondary">
