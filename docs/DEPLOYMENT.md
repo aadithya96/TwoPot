@@ -102,7 +102,7 @@ The deploy job provisions these in the `twopot` namespace on every run
 | Secret           | Type                | Contents / purpose                                                                 |
 | ---------------- | ------------------- | ---------------------------------------------------------------------------------- |
 | `ghcr-creds`     | `docker-registry`   | Lets the cluster pull the private GHCR image. Built from `GHCR_PULL_TOKEN` (falls back to the run's `GITHUB_TOKEN`). |
-| `twopot-supabase`| `generic`           | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — provisioned for runtime/server-side use. |
+| `twopot-supabase`| `generic`           | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_PROJECT_REF`, `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` — so cluster-side jobs (e.g. a CronJob using the Supabase CLI) can read them. |
 
 > **Image-pull token:** the run-scoped `GITHUB_TOKEN` expires when the job ends,
 > so a pod rescheduled later (node reboot, etc.) could fail to pull. Set a

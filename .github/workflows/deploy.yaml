@@ -140,6 +140,9 @@ jobs:
           SUPABASE_URL_VALUE: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_ANON_KEY_VALUE: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY_VALUE: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_PROJECT_REF_VALUE: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_ACCESS_TOKEN_VALUE: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD_VALUE: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
           set -euo pipefail
           # Image-pull secret so the cluster can pull the private GHCR image.
@@ -154,14 +157,18 @@ jobs:
             --docker-password="$pull_token" \
             --dry-run=client -o yaml | kubectl apply -f -
 
-          # Supabase config as a cluster Secret, provisioned for runtime/server-side
-          # use. (The static nginx frontend bakes VITE_* at build time and does not
-          # read this at runtime.)
+          # Supabase config + CLI/project credentials as a cluster Secret, so jobs
+          # on the cluster (e.g. a maintenance/CronJob using the Supabase CLI) can
+          # read them. The static nginx frontend bakes VITE_* at build time and does
+          # not read this at runtime.
           kubectl create secret generic twopot-supabase \
             --namespace twopot \
             --from-literal=SUPABASE_URL="${SUPABASE_URL_VALUE:-}" \
             --from-literal=SUPABASE_ANON_KEY="${SUPABASE_ANON_KEY_VALUE:-}" \
             --from-literal=SUPABASE_SERVICE_ROLE_KEY="${SUPABASE_SERVICE_ROLE_KEY_VALUE:-}" \
+            --from-literal=SUPABASE_PROJECT_REF="${SUPABASE_PROJECT_REF_VALUE:-}" \
+            --from-literal=SUPABASE_ACCESS_TOKEN="${SUPABASE_ACCESS_TOKEN_VALUE:-}" \
+            --from-literal=SUPABASE_DB_PASSWORD="${SUPABASE_DB_PASSWORD_VALUE:-}" \
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Deploy manifests
