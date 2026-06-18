@@ -50,7 +50,11 @@ jobs:
           KUBE_CONFIG_B64: ${{ secrets.KUBE_CONFIG }}
         run: |
           mkdir -p "$HOME/.kube"
-          echo "$KUBE_CONFIG_B64" | base64 -d > "$HOME/.kube/config"
+          printf '%s' "$KUBE_CONFIG_B64" | tr -d '[:space:]' | base64 -d > "$HOME/.kube/config"
+          if ! grep -q 'apiVersion' "$HOME/.kube/config"; then
+            echo "::error::Decoded KUBE_CONFIG does not look like a kubeconfig. Ensure the secret is the base64 of k3s.yaml (e.g. 'base64 -w0 k3s.yaml')."
+            exit 1
+          fi
           chmod 600 "$HOME/.kube/config"
           echo "KUBECONFIG=$HOME/.kube/config" >> "$GITHUB_ENV"
 
