@@ -167,7 +167,11 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
       onClose={onClose}
       sx={{
         '& .MuiDrawer-paper': {
-          borderRadius: '28px 28px 0 0',
+          borderRadius: { xs: '28px 28px 0 0', sm: '28px' },
+          width: '100%',
+          maxWidth: { sm: 480 },
+          mx: 'auto',
+          marginBottom: { sm: 'env(safe-area-inset-bottom)' },
           paddingBottom: 'max(env(safe-area-inset-bottom), 16px)',
           maxHeight: viewportHeight ? `${viewportHeight - 16}px` : '90vh',
         },

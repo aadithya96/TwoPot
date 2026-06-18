@@ -20,6 +20,12 @@ const InsightsPage = lazy(() =>
 const SettingsPage = lazy(() =>
   import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage }))
 )
+const NotificationsPage = lazy(() =>
+  import('@/pages/NotificationsPage').then((m) => ({ default: m.NotificationsPage }))
+)
+const HouseholdPage = lazy(() =>
+  import('@/pages/HouseholdPage').then((m) => ({ default: m.HouseholdPage }))
+)
 
 /** App route tree. `/login` is eagerly loaded; everything else is lazy. */
 export const router = createBrowserRouter([
@@ -35,6 +41,8 @@ export const router = createBrowserRouter([
       { path: 'goals', element: <GoalsPage /> },
       { path: 'insights', element: <InsightsPage /> },
       { path: 'settings', element: <SettingsPage /> },
+      { path: 'settings/notifications', element: <NotificationsPage /> },
+      { path: 'settings/household', element: <HouseholdPage /> },
       { path: '*', element: <Navigate to="/" replace /> },
     ],
   },

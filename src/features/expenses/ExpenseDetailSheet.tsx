@@ -72,7 +72,20 @@ export function ExpenseDetailSheet({
 
   return (
     <>
-      <Drawer anchor="bottom" open={open} onClose={onClose}>
+      <Drawer
+        anchor="bottom"
+        open={open}
+        onClose={onClose}
+        sx={{
+          '& .MuiDrawer-paper': {
+            borderRadius: { xs: '28px 28px 0 0', sm: '28px' },
+            width: '100%',
+            maxWidth: { sm: 480 },
+            mx: 'auto',
+            marginBottom: { sm: 'env(safe-area-inset-bottom)' },
+          },
+        }}
+      >
         <Box sx={{ p: 2.5, paddingBottom: 'max(env(safe-area-inset-bottom), 16px)' }}>
           <Typography variant="headlineSmall">{formatINR(expense.amount)}</Typography>
           <Typography variant="bodyLarge" sx={{ mt: 0.5 }}>
