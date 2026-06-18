@@ -13,6 +13,8 @@ spec:
       labels:
         app: twopot
     spec:
+      imagePullSecrets:
+        - name: ghcr-creds
       containers:
         - name: twopot
           image: ghcr.io/aadithya96/twopot:latest
