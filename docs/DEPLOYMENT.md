@@ -142,11 +142,28 @@ On push to `main`:
    so degraded features are visible in the log). This guarantees the app never
    ships with, e.g., an empty Supabase URL.
 2. **migrate** — `supabase db push` applies pending migrations.
-3. **build-and-deploy** — type-check, lint, test → deploy edge functions and set
-   their secrets → build & push the Docker image to GHCR → connect to Tailscale →
-   create the namespace and cluster secrets → `kubectl apply -f k8s/` →
-   `rollout restart` and wait for `rollout status` (the job fails if pods don't
-   become ready, e.g. on an image-pull error).
+3. **build-and-deploy** — resolve the frontend build vars (see below) → type-check,
+   lint, test → deploy edge functions and set their secrets → build & push the
+   Docker image to GHCR → connect to Tailscale → create the namespace and cluster
+   secrets → `kubectl apply -f k8s/` → `rollout restart` and wait for
+   `rollout status` (the job fails if pods don't become ready, e.g. on an
+   image-pull error).
+
+### Frontend build vars (derived, not secrets)
+
+The three `VITE_*` build vars are resolved at deploy time from what you already
+have, so there are **no extra secrets to add**:
+
+| Var                     | Derived from                                                              |
+| ----------------------- | ------------------------------------------------------------------------ |
+| `VITE_SUPABASE_URL`     | `https://<SUPABASE_PROJECT_REF>.supabase.co`                              |
+| `VITE_SUPABASE_ANON_KEY`| Supabase Management API (`/v1/projects/{ref}/api-keys`) via `SUPABASE_ACCESS_TOKEN` |
+| `VITE_APP_URL`          | the `host:` in `k8s/ingress.yaml` (prefixed with `https://`)             |
+
+The service-role key is fetched the same way and used for the `twopot-supabase`
+cluster secret. The anon/service keys are masked in the logs. This path assumes a
+**hosted** Supabase project; for self-hosted, set the `VITE_*` values explicitly
+instead.
 
 ### GitHub Actions secrets
 
@@ -159,17 +176,16 @@ Cluster / connectivity:
 - `TS_OAUTH_CLIENT_ID`, `TS_OAUTH_SECRET` *(required)* — Tailscale OAuth client (`tag:ci`)
 - `GHCR_PULL_TOKEN` *(optional, recommended)* — classic PAT with `read:packages` for the image-pull secret
 
-Frontend build (`VITE_*`, inlined at build time):
+Frontend build:
 
-- `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_APP_URL` *(required)*
 - `VITE_VAPID_PUBLIC_KEY` *(optional — web push disabled if unset)*
+- `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_APP_URL` are **derived**, not secrets (see "Frontend build vars" above).
 
 Supabase project + migrations:
 
-- `SUPABASE_ACCESS_TOKEN` *(required)* — personal access token (Account → Access Tokens)
+- `SUPABASE_ACCESS_TOKEN` *(required)* — personal access token (Account → Access Tokens); also used to fetch the anon/service-role keys
 - `SUPABASE_PROJECT_REF` *(required)* — the target project's ref id
 - `SUPABASE_DB_PASSWORD` *(required)* — database password (for `db push`)
-- `SUPABASE_SERVICE_ROLE_KEY` *(optional)* — service-role key for the `twopot-supabase` cluster secret (functions get theirs auto-injected)
 
 Edge function secrets, all *(optional)* — set on the Supabase project:
 
