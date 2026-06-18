@@ -45,10 +45,14 @@ jobs:
           push: true
           tags: ${{ env.IMAGE_NAME  }}:latest
 
-      - uses: azure/k8s-set-context@v5
-        with:
-          method: kubeconfig
-          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+      - name: Configure kubeconfig
+        env:
+          KUBE_CONFIG_B64: ${{ secrets.KUBE_CONFIG }}
+        run: |
+          mkdir -p "$HOME/.kube"
+          echo "$KUBE_CONFIG_B64" | base64 -d > "$HOME/.kube/config"
+          chmod 600 "$HOME/.kube/config"
+          echo "KUBECONFIG=$HOME/.kube/config" >> "$GITHUB_ENV"
 
       - run: kubectl apply -f k8s/
       - run: kubectl rollout restart deployment/twopot -n twopot
