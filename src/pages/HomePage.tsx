@@ -24,7 +24,6 @@ import { useBudgetUsage } from '@/features/budgets'
 import { GoalCard, useGoals } from '@/features/goals'
 import { SettlementCard, useIsSettled, useSettlement } from '@/features/settlement'
 import { useCurrentUser } from '@/features/auth'
-import { fabRightOffset } from '@/lib/layout'
 
 /**
  * Dashboard: current-month spend summary, member contribution chips, settlement card,
@@ -87,7 +86,16 @@ export function HomePage() {
   const recentExpenses = useMemo(() => (expenses ?? []).slice(0, 5), [expenses])
 
   return (
-    <Box sx={{ p: 2, pb: 12, display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <Box
+      sx={{
+        p: { xs: 2, md: 0 },
+        pt: { md: 3 },
+        pb: { xs: 12, md: 0 },
+        display: 'flex',
+        flexDirection: 'column',
+        gap: { xs: 2, md: 3 },
+      }}
+    >
       <Card elevation={1}>
         <CardContent>
           <Typography variant="titleMedium" color="text.secondary">
@@ -151,6 +159,14 @@ export function HomePage() {
         </Stack>
       )}
 
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+          gap: { xs: 2, md: 3 },
+          alignItems: 'start',
+        }}
+      >
       <Box>
         <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
           <Typography variant="titleMedium">Recent expenses</Typography>
@@ -211,12 +227,13 @@ export function HomePage() {
           </Stack>
         )}
       </Box>
+      </Box>
 
       <Fab
         color="primary"
         aria-label="Add expense"
         onClick={() => setIsAddOpen(true)}
-        sx={{ position: 'fixed', bottom: 88, right: fabRightOffset }}
+        sx={{ position: 'fixed', bottom: { xs: 88, md: 32 }, right: { xs: 16, md: 32 } }}
       >
         <AddOutlinedIcon />
       </Fab>

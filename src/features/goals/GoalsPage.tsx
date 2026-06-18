@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Box, Fab, Skeleton, Stack, Typography } from '@mui/material'
 import Add from '@mui/icons-material/Add'
 import { useHouseholdStore } from '@/stores/householdStore'
-import { fabRightOffset } from '@/lib/layout'
 import { useGoals } from './useGoals'
 import { useRealtimeGoals } from './useRealtimeGoals'
 import { GoalCard } from './GoalCard'
@@ -22,7 +21,13 @@ export function GoalsPage() {
   return (
     <Box sx={{ p: 2, pb: 10, position: 'relative', minHeight: '100%' }}>
       {isLoading ? (
-        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(3, 1fr)' },
+            gap: 2,
+          }}
+        >
           {Array.from({ length: 4 }).map((_, index) => (
             <Skeleton key={index} variant="rounded" height={180} />
           ))}
@@ -35,7 +40,13 @@ export function GoalsPage() {
           </Typography>
         </Stack>
       ) : (
-        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(3, 1fr)' },
+            gap: 2,
+          }}
+        >
           {(goals ?? []).map((goal) => (
             <GoalCard key={goal.id} goal={goal} members={members} />
           ))}
@@ -45,7 +56,7 @@ export function GoalsPage() {
       <Fab
         color="primary"
         onClick={() => setDialogOpen(true)}
-        sx={{ position: 'fixed', bottom: 96, right: fabRightOffset }}
+        sx={{ position: 'fixed', bottom: { xs: 96, md: 32 }, right: { xs: 16, md: 32 } }}
         aria-label="Create savings goal"
       >
         <Add />

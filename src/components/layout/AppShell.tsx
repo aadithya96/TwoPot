@@ -1,46 +1,63 @@
 import { Box } from '@mui/material'
 import { Outlet } from 'react-router-dom'
-import { APP_MAX_WIDTH } from '@/lib/layout'
+import { APP_MAX_WIDTH, DESKTOP_MAX_WIDTH } from '@/lib/layout'
 import { TopAppBar } from './TopAppBar'
 import { BottomNav } from './BottomNav'
+import { SideNav } from './SideNav'
 
 export interface AppShellProps {
   /** Title passed through to the `TopAppBar`. */
   title?: string
-  /** Avatar image URL passed through to the `TopAppBar`. */
+  /** Avatar image URL passed through to the `TopAppBar`/`SideNav`. */
   avatarUrl?: string | null
-  /** Display name passed through to the `TopAppBar`. */
+  /** Display name passed through to the `TopAppBar`/`SideNav`. */
   displayName?: string | null
-  /** Called when the user selects "Sign out" from the `TopAppBar` menu. */
+  /** Called when the user selects "Sign out". */
   onSignOut: () => void
 }
 
 /**
- * Full-height flex-column app shell: sticky `TopAppBar`, scrollable `<main>`
- * rendering the active route via `Outlet`, and a fixed `BottomNav`.
+ * Adaptive app shell. On desktop (md+) a persistent `SideNav` rail sits beside a
+ * scrollable content column. On mobile it falls back to a sticky `TopAppBar` and
+ * a fixed `BottomNav`. The active route renders via `Outlet` in both layouts.
  */
 export function AppShell({ title, avatarUrl, displayName, onSignOut }: AppShellProps) {
   return (
-    <Box className="app-shell" sx={{ height: '100dvh', display: 'flex', flexDirection: 'column' }}>
-      <TopAppBar
-        title={title}
-        avatarUrl={avatarUrl}
-        displayName={displayName}
-        onSignOut={onSignOut}
-      />
-      <Box
-        component="main"
-        sx={{
-          flex: 1,
-          overflowY: 'auto',
-          WebkitOverflowScrolling: 'touch',
-          paddingBottom: 'calc(80px + env(safe-area-inset-bottom))',
-        }}
-      >
-        <Box sx={{ width: '100%', maxWidth: APP_MAX_WIDTH, mx: 'auto' }}>
-          <Outlet />
+    <Box sx={{ height: '100dvh', display: 'flex' }}>
+      <SideNav avatarUrl={avatarUrl} displayName={displayName} onSignOut={onSignOut} />
+
+      <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+          <TopAppBar
+            title={title}
+            avatarUrl={avatarUrl}
+            displayName={displayName}
+            onSignOut={onSignOut}
+          />
+        </Box>
+
+        <Box
+          component="main"
+          sx={{
+            flex: 1,
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            paddingBottom: { xs: 'calc(80px + env(safe-area-inset-bottom))', md: 4 },
+          }}
+        >
+          <Box
+            sx={{
+              width: '100%',
+              maxWidth: { xs: APP_MAX_WIDTH, md: DESKTOP_MAX_WIDTH },
+              mx: 'auto',
+              px: { md: 3 },
+            }}
+          >
+            <Outlet />
+          </Box>
         </Box>
       </Box>
+
       <BottomNav />
     </Box>
   )

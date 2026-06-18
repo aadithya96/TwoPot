@@ -35,6 +35,7 @@ export function BottomNav() {
     <Paper
       elevation={3}
       sx={{
+        display: { xs: 'block', md: 'none' },
         position: 'fixed',
         bottom: 0,
         left: 0,
