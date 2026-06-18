@@ -1,5 +1,6 @@
 import { BottomNavigation, BottomNavigationAction, Paper } from '@mui/material'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { APP_MAX_WIDTH } from '@/lib/layout'
 import HomeIcon from '@mui/icons-material/Home'
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined'
 import ReceiptIcon from '@mui/icons-material/Receipt'
@@ -49,7 +50,13 @@ export function BottomNav() {
           const tab = TABS[newValue]
           if (tab) navigate(tab.path)
         }}
-        sx={{ height: '100%', paddingBottom: 'env(safe-area-inset-bottom)' }}
+        sx={{
+          height: '100%',
+          width: '100%',
+          maxWidth: APP_MAX_WIDTH,
+          mx: 'auto',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}
       >
         {TABS.map((tab, index) => {
           const isActive = index === activeIndex

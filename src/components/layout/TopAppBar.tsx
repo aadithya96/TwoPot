@@ -11,6 +11,7 @@ import {
   ListItemText,
 } from '@mui/material'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { APP_MAX_WIDTH } from '@/lib/layout'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import SettingsIcon from '@mui/icons-material/Settings'
 import LogoutIcon from '@mui/icons-material/Logout'
@@ -39,7 +40,7 @@ export function TopAppBar({ title, avatarUrl, displayName, onSignOut }: TopAppBa
 
   return (
     <AppBar position="sticky" sx={{ paddingTop: 'env(safe-area-inset-top)' }}>
-      <Toolbar>
+      <Toolbar sx={{ width: '100%', maxWidth: APP_MAX_WIDTH, mx: 'auto' }}>
         {!isRootTab && (
           <IconButton
             aria-label="Go back"

@@ -24,6 +24,7 @@ import { useBudgetUsage } from '@/features/budgets'
 import { GoalCard, useGoals } from '@/features/goals'
 import { SettlementCard, useIsSettled, useSettlement } from '@/features/settlement'
 import { useCurrentUser } from '@/features/auth'
+import { fabRightOffset } from '@/lib/layout'
 
 /**
  * Dashboard: current-month spend summary, member contribution chips, settlement card,
@@ -215,7 +216,7 @@ export function HomePage() {
         color="primary"
         aria-label="Add expense"
         onClick={() => setIsAddOpen(true)}
-        sx={{ position: 'fixed', bottom: 88, right: 16 }}
+        sx={{ position: 'fixed', bottom: 88, right: fabRightOffset }}
       >
         <AddOutlinedIcon />
       </Fab>

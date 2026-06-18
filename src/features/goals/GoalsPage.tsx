@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Box, Fab, Skeleton, Stack, Typography } from '@mui/material'
 import Add from '@mui/icons-material/Add'
 import { useHouseholdStore } from '@/stores/householdStore'
+import { fabRightOffset } from '@/lib/layout'
 import { useGoals } from './useGoals'
 import { useRealtimeGoals } from './useRealtimeGoals'
 import { GoalCard } from './GoalCard'
@@ -44,7 +45,7 @@ export function GoalsPage() {
       <Fab
         color="primary"
         onClick={() => setDialogOpen(true)}
-        sx={{ position: 'fixed', bottom: 96, right: 16 }}
+        sx={{ position: 'fixed', bottom: 96, right: fabRightOffset }}
         aria-label="Create savings goal"
       >
         <Add />
