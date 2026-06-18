@@ -1,4 +1,4 @@
-# Kosha — Implementation Guide
+# TwoPot — Implementation Guide
 
 > Expense tracking & budgeting PWA for two people. React + Vite + Supabase (self-hosted) on k3s.
 
@@ -31,8 +31,8 @@
 ### 1.1 Scaffold the frontend
 
 ```bash
-npm create vite@latest kosha -- --template react-ts
-cd kosha
+npm create vite@latest twopot -- --template react-ts
+cd twopot
 npm install
 ```
 
@@ -83,7 +83,7 @@ export default defineConfig({
 # .env.local
 VITE_SUPABASE_URL=https://supabase.yourdomain.com
 VITE_SUPABASE_ANON_KEY=your-anon-key
-VITE_APP_URL=https://kosha.yourdomain.com
+VITE_APP_URL=https://twopot.yourdomain.com
 ```
 
 ### Todo — Project Setup
@@ -407,21 +407,33 @@ create policy "push: own" on public.push_subscriptions for all
 
 ### Todo — Database Schema
 
-- [ ] Create all migrations as numbered SQL files: `supabase/migrations/001_init.sql` etc.
-- [ ] Implement `profiles` table + `handle_new_user` trigger
-- [ ] Implement `households` + `household_members` tables
-- [ ] Implement `categories` table + `seed_default_categories` function
-- [ ] Implement `expenses` table with all columns, constraints, indexes
-- [ ] Implement `budgets` table with unique indexes
-- [ ] Implement `savings_goals` + `goal_contributions` tables
-- [ ] Implement `settlements` table
-- [ ] Implement `push_subscriptions` table
-- [ ] Enable RLS and write policies for all tables
-- [ ] Write `is_household_member` helper function
+- [x] Create all migrations as numbered SQL files: `supabase/migrations/001_init.sql` etc.
+- [x] Implement `profiles` table + `handle_new_user` trigger
+- [x] Implement `households` + `household_members` tables
+- [x] Implement `categories` table + `seed_default_categories` function
+- [x] Implement `expenses` table with all columns, constraints, indexes
+- [x] Implement `budgets` table with unique indexes
+- [x] Implement `savings_goals` + `goal_contributions` tables
+- [x] Implement `settlements` table
+- [x] Implement `push_subscriptions` table
+- [x] Enable RLS and write policies for all tables
+- [x] Write `is_household_member` helper function
 - [ ] Test all policies with two separate auth users in Supabase Studio
-- [ ] Add `updated_at` trigger to `expenses`, `savings_goals`
-- [ ] Seed default categories when a new household is created (trigger or function call)
-- [ ] Write TypeScript types matching every table (`src/types/db.ts`) — use `supabase gen types typescript`
+- [x] Add `updated_at` trigger to `expenses`, `savings_goals`
+- [ ] Seed default categories when a new household is created (trigger or function call) — `seed_default_categories(hid)` exists but is not yet wired to a household-creation trigger; call it from the onboarding flow when Phase 1 implements household creation
+- [x] Write TypeScript types matching every table (`src/types/db.ts`) — hand-written stub kept in sync with migrations; regenerate with `supabase gen types typescript` once a local instance exists
+
+### Deviations
+
+The implementation differs from the schema sketched above in this section:
+
+- `expenses`: no `currency` or `next_due_date` column; `expense_date` renamed to `date`; `created_by` column dropped (use `paid_by`); `owner` is a `text` check constraint, not a Postgres `enum`, for simpler migrations/rollbacks; `split_type` values are `'equal' | 'custom' | 'payer_covers'` (not `'50_50' | 'custom' | 'solo'`); `goal_id` added (uuid, FK added in `006_savings_goals.sql` once `savings_goals` exists).
+- `budgets`: no `valid_from`/`valid_until`/`rollover_balance` columns — one persistent row per `(household_id, category_id, period)`. Unique index reflects this. `process_budget_rollover` (see §6.1 deviation) folds unused amount directly into the row's `amount` instead of into a separate `rollover_balance`.
+- `savings_goals`: no `description` column; `is_completed` dropped in favor of `completed_at is not null`; default `icon`/`color` are `'Flag'` / `'#6366f1'` (MUI icon name, matching categories' convention) rather than `'piggy-bank'` / `'#10b981'`.
+- `goal_contributions`: column is `user_id` (FK `profiles`), not `contributed_by`; `created_at`, not `contributed_at`.
+- `settlements`: columns are `owed_by`/`owed_to`/`settled`/`created_at`, not `from_user_id`/`to_user_id`/`is_settled`; no `note` column.
+- `push_subscriptions`: no `user_agent` column.
+- `categories.icon` stores `@mui/icons-material` export names (e.g. `'RestaurantOutlined'`), not lucide-react names — the app uses MUI, not Tailwind/lucide, despite what earlier sections of this guide say.
 
 ---
 
@@ -592,17 +604,17 @@ export function useMarkSettled(householdId: string) {
 
 ### Todo — Settlement Logic
 
-- [ ] Create `monthly_settlement` view in Supabase
-- [ ] Create `compute_settlement` RPC function
-- [ ] Handle edge case: only one member has paid expenses that month
-- [ ] Handle edge case: `solo` split type — payer owes nothing, counterpart owes nothing
-- [ ] Handle edge case: net_amount = 0 (all square — show celebratory state in UI)
+- [x] Create `monthly_settlement` view in Supabase
+- [x] Create `compute_settlement` RPC function
+- [x] Handle edge case: only one member has paid expenses that month (the other member's `owed_amount` is simply 0 — nets out correctly)
+- [x] Handle edge case: `payer_covers` split type (renamed from `solo`) — payer owes nothing, counterpart owes nothing
+- [x] Handle edge case: net_amount = 0 (all square — `compute_settlement` returns `amount = 0`; UI celebratory state still to build)
 - [ ] Write TypeScript hook `useSettlement`
 - [ ] Write TypeScript hook `useMarkSettled`
 - [ ] Build `SettlementCard` component — shows who owes whom, net amount, "Mark as Settled" button
 - [ ] Build `SettlementHistory` component — past months with settled/unsettled status
 - [ ] Unit test the SQL function with known fixture data (psql or pgTAP)
-- [ ] Handle rollover budgets in settlement (exclude from person-to-person flow)
+- [ ] Handle rollover budgets in settlement (exclude from person-to-person flow) — rollover budgets are category-level only and never feed `monthly_settlement`, so no special-casing was needed
 
 ---
 
@@ -623,7 +635,7 @@ export const supabase = createClient<Database>(
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
-      storageKey: 'kosha-auth',
+      storageKey: 'twopot-auth',
     },
   }
 )
@@ -833,7 +845,7 @@ Deno.serve(async () => {
 - [ ] Add keyboard shortcut `N` to open add expense on desktop
 - [ ] Implement recurring expense toggle + recurrence rule selector (daily/weekly/monthly)
 - [ ] Build `RecurringExpensesList` — shows all active recurring entries with next due date
-- [ ] Build Supabase Edge Function for recurring expense cron job
+- [x] Build Supabase Edge Function for recurring expense cron job (`supabase/functions/recurring-expenses` — monthly recurrence only for now; `recurrence_rule` must be the literal string `'monthly'`)
 - [ ] Set up pg_cron in self-hosted Supabase to trigger the Edge Function monthly
 - [ ] Write integration tests for CRUD operations
 
@@ -921,9 +933,15 @@ $$;
 - [ ] Implement `useBudgetAlerts` hook
 - [ ] Show inline alert banner in `BudgetPage` when any budget ≥ 80%
 - [ ] Build `RolloverToggle` in budget settings
-- [ ] Create `budget_usage` view in Supabase
-- [ ] Create `process_budget_rollover` function
+- [x] Create `budget_usage` view in Supabase
+- [x] Create `process_budget_rollover` function
 - [ ] Set up pg_cron to call rollover function at month-end
+
+### Deviations (§6.1 / §6.3)
+
+`budgets` has no per-month history rows (see §2 deviations), so `budget_usage` and `process_budget_rollover` were adapted accordingly:
+- `budget_usage` joins `budgets` + `categories` + `expenses`, filtering expenses to the current calendar month, and exposes `spent_amount` (not `spent`/`remaining`/`pct_used` — compute those client-side from `budget_amount` and `spent_amount`).
+- `process_budget_rollover()` takes no arguments (operates over all households' rollover-enabled budgets in one pass, since it's meant to run once globally via a scheduler) and adds last month's unused amount directly onto the budget row's `amount` column, rather than maintaining a separate `rollover_balance`.
 - [ ] Handle "no budget set" state — prompt to set one
 - [ ] Add budget context to `AddExpenseSheet` — show remaining when user selects a category
 
@@ -1039,7 +1057,7 @@ $$;
 - [ ] Build `CreateGoalDialog` — name, target amount, deadline (optional), icon, color picker
 - [ ] Build `ContributeDialog` — amount input, who is contributing, optional note
 - [ ] Implement `useGoals`, `useCreateGoal`, `useContribute` hooks
-- [ ] Create `increment_goal_amount` RPC function
+- [x] Create `increment_goal_amount` RPC function
 - [ ] Add "goal completed" confetti animation when target is reached
 - [ ] Build `GoalContributionHistory` — timeline of contributions per goal
 - [ ] Show projected completion date on each goal card
@@ -1233,17 +1251,21 @@ group by p.id, p.display_name;
 
 ### Todo — Insights & Charts
 
-- [ ] Build `InsightsPage` with month selector
-- [ ] Build `SpendByCategory` donut chart (Recharts `PieChart`)
-- [ ] Build `MonthlyTrend` line chart (Recharts `LineChart`) — last 6 months
-- [ ] Build `PersonContributions` grouped bar chart
+- [x] Build `InsightsPage` with month selector
+- [x] Build `SpendByCategory` donut chart (Recharts `PieChart`)
+- [x] Build `MonthlyTrend` line chart (Recharts `LineChart`) — last 6 months
+- [x] Build `PersonContributions` grouped bar chart
 - [ ] Build `TopCategories` list — ranked by spend with delta vs last month
-- [ ] Create all three SQL RPC functions
-- [ ] Implement React Query hooks for each chart dataset
-- [ ] Build `StatCard` components — total spend, largest category, avg daily spend
+- [x] Create all three SQL RPC functions — `011_insights.sql`
+- [x] Implement React Query hooks for each chart dataset
+- [x] Build `StatCard` components — total spend, largest category, avg daily spend
 - [ ] Add empty state illustrations for months with no data
-- [ ] Make all charts responsive (recharts `ResponsiveContainer`)
+- [x] Make all charts responsive (recharts `ResponsiveContainer`)
 - [ ] (v2) Add YTD summary view
+
+### Deviations (§10)
+
+`monthly_by_category`, `monthly_trend`, and `person_contributions` take a `p_household_id uuid` and (for `monthly_by_category`) a `p_month text` in `'YYYY-MM'` form, not the `$1`/`$2`/`$3` positional params sketched above. `monthly_trend` and `person_contributions` always return the trailing 6 months (current month inclusive) rather than taking explicit date-range args, since the UI always renders a fixed 6-month window.
 
 ---
 
@@ -1257,8 +1279,8 @@ VitePWA({
   registerType: 'autoUpdate',
   includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
   manifest: {
-    name: 'Kosha',
-    short_name: 'Kosha',
+    name: 'TwoPot',
+    short_name: 'TwoPot',
     description: 'Household expense tracker',
     theme_color: '#6366f1',
     background_color: '#ffffff',
@@ -1314,7 +1336,7 @@ npx pwa-asset-generator logo.svg public/icons \
 <!-- index.html -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Kosha">
+<meta name="apple-mobile-web-app-title" content="TwoPot">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="mask-icon" href="/icons/masked-icon.svg" color="#6366f1">
 ```
@@ -1377,7 +1399,7 @@ export function useInstallPrompt() {
 // src/lib/offlineQueue.ts
 import { openDB } from 'idb'
 
-const db = await openDB('kosha-offline', 1, {
+const db = await openDB('twopot-offline', 1, {
   upgrade(db) {
     db.createObjectStore('pending_expenses', { keyPath: 'localId', autoIncrement: true })
   },
@@ -1526,7 +1548,7 @@ self.addEventListener('notificationclick', (event) => {
 - [ ] Implement `subscribeToPush` and `unsubscribeFromPush` functions
 - [ ] Build `NotificationSettings` page — toggle per notification type
 - [ ] Request notification permission on first login (after user interaction)
-- [ ] Implement `send-push` Edge Function
+- [x] Implement `send-push` Edge Function
 - [ ] Trigger push on budget 80% threshold (via Postgres function + Edge Function)
 - [ ] Trigger push on budget exceeded
 - [ ] Trigger push on partner large expense (configurable ₹ threshold)
@@ -1535,7 +1557,7 @@ self.addEventListener('notificationclick', (event) => {
 - [ ] Add push handler to service worker
 - [ ] Test on Android Chrome (push works)
 - [ ] Test on iOS Safari 17+ (push works for installed PWAs)
-- [ ] Handle expired/invalid push subscriptions (remove from DB on 410 response)
+- [x] Handle expired/invalid push subscriptions (remove from DB on 410 response) — also handles 404
 
 ---
 
@@ -1801,9 +1823,9 @@ export function InstallBanner() {
     }}>
       <span style={{ flex: 1, color: 'var(--color-text-info)' }}>
         {state === 'ios-prompt' && (
-          <>Tap <strong>Share</strong> → <strong>Add to Home Screen</strong> to install Kosha</>
+          <>Tap <strong>Share</strong> → <strong>Add to Home Screen</strong> to install TwoPot</>
         )}
-        {state === 'android-prompt' && 'Install Kosha for a better experience'}
+        {state === 'android-prompt' && 'Install TwoPot for a better experience'}
       </span>
 
       {state === 'android-prompt' && canInstall && (
@@ -1838,7 +1860,7 @@ export function usePushSetup(userId: string) {
   const requestPermission = useCallback(async () => {
     // Hard gate on iOS — push won't work in browser tab
     if (installState === 'ios-prompt') {
-      toast.info('Install Kosha to your home screen to enable notifications')
+      toast.info('Install TwoPot to your home screen to enable notifications')
       return
     }
 
@@ -2398,26 +2420,26 @@ docker compose up -d
 ### 14.2 Frontend Deployment (k3s)
 
 ```yaml
-# k8s/kosha-frontend.yaml
+# k8s/twopot-frontend.yaml
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kosha-frontend
-  namespace: kosha
+  name: twopot-frontend
+  namespace: twopot
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: kosha-frontend
+      app: twopot-frontend
   template:
     metadata:
       labels:
-        app: kosha-frontend
+        app: twopot-frontend
     spec:
       containers:
-        - name: kosha-frontend
-          image: ghcr.io/yourusername/kosha-frontend:latest
+        - name: twopot-frontend
+          image: ghcr.io/yourusername/twopot-frontend:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 80
@@ -2425,12 +2447,12 @@ spec:
             - name: VITE_SUPABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: kosha-secrets
+                  name: twopot-secrets
                   key: supabase-url
             - name: VITE_SUPABASE_ANON_KEY
               valueFrom:
                 secretKeyRef:
-                  name: kosha-secrets
+                  name: twopot-secrets
                   key: supabase-anon-key
           resources:
             requests:
@@ -2443,11 +2465,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: kosha-frontend
-  namespace: kosha
+  name: twopot-frontend
+  namespace: twopot
 spec:
   selector:
-    app: kosha-frontend
+    app: twopot-frontend
   ports:
     - port: 80
       targetPort: 80
@@ -2455,8 +2477,8 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: kosha-frontend
-  namespace: kosha
+  name: twopot-frontend
+  namespace: twopot
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
@@ -2465,17 +2487,17 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - kosha.yourdomain.com
-      secretName: kosha-tls
+        - twopot.yourdomain.com
+      secretName: twopot-tls
   rules:
-    - host: kosha.yourdomain.com
+    - host: twopot.yourdomain.com
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: kosha-frontend
+                name: twopot-frontend
                 port:
                   number: 80
 ```
@@ -2547,10 +2569,10 @@ spec:
 ### 14.5 Secrets
 
 ```bash
-kubectl create namespace kosha
+kubectl create namespace twopot
 
-kubectl create secret generic kosha-secrets \
-  --namespace kosha \
+kubectl create secret generic twopot-secrets \
+  --namespace twopot \
   --from-literal=supabase-url="https://supabase.yourdomain.com" \
   --from-literal=supabase-anon-key="your-anon-key"
 ```
@@ -2561,7 +2583,7 @@ kubectl create secret generic kosha-secrets \
 |---|---|---|---|
 | Supabase (Docker Compose) | ~1.5 GB | ~0.5 core | ~10 GB |
 | Postgres (bundled) | ~256 MB | ~0.2 core | ~5 GB data |
-| Kosha frontend (k3s) | 64 MB | 50m | — |
+| TwoPot frontend (k3s) | 64 MB | 50m | — |
 | **Total** | ~2 GB | ~0.8 core | ~15 GB |
 
 Well within ODROID-H4+ capacity (16–32 GB RAM, 4–8 core N97/N100).
@@ -2574,13 +2596,13 @@ Well within ODROID-H4+ capacity (16–32 GB RAM, 4–8 core N97/N100).
 - [ ] Set up Nginx reverse proxy or Traefik in front of Supabase services
 - [ ] Install Cert-Manager in k3s cluster
 - [ ] Create `ClusterIssuer` for Let's Encrypt
-- [ ] Create `kosha` namespace in k3s
-- [ ] Create `kosha-secrets` Kubernetes secret
+- [ ] Create `twopot` namespace in k3s
+- [ ] Create `twopot-secrets` Kubernetes secret
 - [ ] Write `Dockerfile` for frontend
 - [ ] Write `nginx.conf` with SPA routing and correct cache headers
 - [ ] Write k8s manifests: `Deployment`, `Service`, `Ingress`
 - [ ] Apply manifests: `kubectl apply -f k8s/`
-- [ ] Verify TLS certificate is issued: `kubectl describe certificate -n kosha`
+- [ ] Verify TLS certificate is issued: `kubectl describe certificate -n twopot`
 - [ ] Set up PersistentVolume for Supabase Postgres data (ZFS volume on ODROID)
 - [ ] Configure automated Postgres backups (pg_dump to local NAS or Backblaze B2)
 - [ ] Set up monitoring: Prometheus + Grafana (already on homelab?) for pod health
@@ -2606,7 +2628,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/kosha-frontend
+  IMAGE_NAME: ${{ github.repository }}/twopot-frontend
 
 jobs:
   test:
@@ -2645,8 +2667,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}/kosha-frontend:latest
-            ghcr.io/${{ github.repository }}/kosha-frontend:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/twopot-frontend:latest
+            ghcr.io/${{ github.repository }}/twopot-frontend:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
@@ -2668,17 +2690,17 @@ jobs:
 
       - name: Update deployment image
         run: |
-          kubectl set image deployment/kosha-frontend \
-            kosha-frontend=ghcr.io/${{ github.repository }}/kosha-frontend:${{ github.sha }} \
-            --namespace kosha
+          kubectl set image deployment/twopot-frontend \
+            twopot-frontend=ghcr.io/${{ github.repository }}/twopot-frontend:${{ github.sha }} \
+            --namespace twopot
 
       - name: Wait for rollout
         run: |
-          kubectl rollout status deployment/kosha-frontend --namespace kosha --timeout=120s
+          kubectl rollout status deployment/twopot-frontend --namespace twopot --timeout=120s
 
       - name: Run smoke test
         run: |
-          curl -f https://kosha.yourdomain.com/health || exit 1
+          curl -f https://twopot.yourdomain.com/health || exit 1
 ```
 
 ### 15.2 Database migrations in CI
@@ -2700,7 +2722,7 @@ jobs:
 
 ```
 main          → production (auto-deploy)
-develop       → staging (deploy to kosha-staging.yourdomain.com)
+develop       → staging (deploy to twopot-staging.yourdomain.com)
 feature/*     → PR only (lint + test)
 ```
 
@@ -2729,7 +2751,7 @@ feature/*     → PR only (lint + test)
 - [ ] Set up self-hosted GitHub Actions runner on ODROID if not exposing kubectl externally
 - [ ] Test full pipeline end-to-end: push to main → test → build → deploy
 - [ ] Add Supabase CLI migration step
-- [ ] Set up staging environment on separate namespace `kosha-staging`
+- [ ] Set up staging environment on separate namespace `twopot-staging`
 - [ ] Add Lighthouse CI check on PRs (PWA score regression detection)
 - [ ] Set up Dependabot for npm and Docker base image updates
 - [ ] Add Docker layer caching to reduce build time
@@ -2741,7 +2763,7 @@ feature/*     → PR only (lint + test)
 ### Phase 1 — Core (target: 2 weeks)
 
 - [ ] Project scaffold + tooling
-- [ ] Database schema (all tables, RLS, triggers)
+- [x] Database schema (all tables, RLS, triggers)
 - [ ] Google OAuth + household invite flow
 - [ ] Add / edit / delete expenses (CRUD)
 - [ ] Expense list by month

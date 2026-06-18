@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: twopot
+  namespace: twopot
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: twopot
+  template:
+    metadata:
+      labels:
+        app: twopot
+    spec:
+      containers:
+        - name: twopot
+          image: ghcr.io/aadithya96/twopot:latest
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
