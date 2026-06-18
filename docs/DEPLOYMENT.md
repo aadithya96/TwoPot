@@ -14,13 +14,15 @@ via its own Docker Compose stack on the same cluster/host.
 2. Apply migrations: `supabase db push` (or run the SQL files in
    `supabase/migrations` in order against the Postgres instance).
 3. Deploy Edge Functions: `supabase functions deploy recurring-expenses`,
-   `supabase functions deploy send-push`, and `supabase functions deploy scan-receipt`.
+   `supabase functions deploy send-push`, `supabase functions deploy scan-receipt`,
+   and `supabase functions deploy parse-expense`.
 4. Schedule `recurring-expenses` via `pg_cron` or an external scheduler to run daily.
-5. Configure the `scan-receipt` secret so receipt OCR can call the vision API:
+5. Configure the shared Anthropic secret used by `scan-receipt` (receipt OCR) and
+   `parse-expense` (natural-language quick-add):
    `supabase secrets set ANTHROPIC_API_KEY=sk-ant-...`
    (optionally `ANTHROPIC_MODEL` to override the default `claude-haiku-4-5-20251001`).
-   Without this secret, receipt photos still upload and attach — only automatic
-   field extraction is unavailable.
+   Without this secret, receipt photos still upload/attach and expenses can be
+   entered manually — only the AI-assisted autofill is unavailable.
 
 ## Frontend image
 

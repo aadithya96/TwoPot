@@ -16,15 +16,14 @@ Working backlog of UI/UX and feature work. Items move from **Up next** →
 - [x] Receipt photos + server-side OCR autofill (`scan-receipt` edge function)
 - [x] Income-based fair splitting — incomes in Settings; shared expenses
       default to the income ratio when enabled (migration `013_member_income`)
+- [x] Natural-language quick-add — `parse-expense` edge function + a "type it
+      naturally" field in the add sheet that prefills the form
 
 ---
 
 ## ▶️ Up next (top recommendations)
 
-1. [ ] **Natural-language quick-add** — type "spent 250 on groceries yesterday"
-       and an LLM parses amount/category/date/description (reuses the OCR
-       edge-function pattern).
-3. [ ] **Custom category management** — CRUD UI for categories (currently only
+1. [ ] **Custom category management** — CRUD UI for categories (currently only
        seeded defaults).
 
 ---
@@ -41,7 +40,7 @@ Working backlog of UI/UX and feature work. Items move from **Up next** →
 
 ## 🤖 Smart input (reuses Anthropic edge-function infra)
 
-- [ ] Natural-language quick-add *(see Up next)*
+- [x] Natural-language quick-add
 - [ ] Bank/UPI SMS import — parse a transaction SMS into an expense
 - [ ] Smart auto-categorization — suggest a category from the description
 
