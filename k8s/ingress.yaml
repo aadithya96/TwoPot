@@ -9,10 +9,10 @@ spec:
   ingressClassName: traefik
   tls:
     - hosts:
-        - ad-labs.duckdns.org
+        - twopot.ad-labs.com
       secretName: twopot-tls
   rules:
-    - host: ad-labs.duckdns.org
+    - host: twopot.ad-labs.com
       http:
         paths:
           - path: /
