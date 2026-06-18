@@ -23,6 +23,7 @@ import { useCurrentUser, signOut } from '@/features/auth'
 import { useHouseholdStore } from '@/stores/householdStore'
 import { useDarkMode } from '@/hooks/useDarkMode'
 import { IncomeSplitSettings } from '@/features/splitting'
+import { CategoryManager } from '@/features/categories'
 
 /**
  * Settings screen: profile summary, dark-mode toggle, links to notification and household
@@ -105,6 +106,8 @@ export function SettingsPage() {
       </Card>
 
       {householdId && <IncomeSplitSettings householdId={householdId} />}
+
+      {householdId && <CategoryManager householdId={householdId} />}
 
       <Button
         variant="text"

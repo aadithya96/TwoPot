@@ -18,13 +18,15 @@ Working backlog of UI/UX and feature work. Items move from **Up next** →
       default to the income ratio when enabled (migration `013_member_income`)
 - [x] Natural-language quick-add — `parse-expense` edge function + a "type it
       naturally" field in the add sheet that prefills the form
+- [x] Custom category management — add/edit/delete categories (name, emoji
+      icon, colour) from Settings
 
 ---
 
-## ▶️ Up next (top recommendations)
+## ▶️ Up next
 
-1. [ ] **Custom category management** — CRUD UI for categories (currently only
-       seeded defaults).
+_All three top recommendations shipped. Pick the next item from the backlog
+below._
 
 ---
 
@@ -64,7 +66,7 @@ Working backlog of UI/UX and feature work. Items move from **Up next** →
 
 ## 🔧 Plumbing / trust
 
-- [ ] Custom category management *(see Up next)*
+- [x] Custom category management
 - [ ] CSV / PDF monthly statement export
 - [ ] Multi-currency + travel mode (currently INR-only)
 - [ ] PWA home-screen shortcut → "Add expense"
