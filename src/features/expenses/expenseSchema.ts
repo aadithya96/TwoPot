@@ -14,6 +14,7 @@ export const expenseSchema = z
     description: z.string().min(1, 'Description is required'),
     notes: z.string().nullable(),
     isRecurring: z.boolean(),
+    receiptUrl: z.string().nullable(),
   })
   .refine((data) => data.owner !== 'personal' || Boolean(data.personalUserId), {
     message: 'Select who this personal expense belongs to',
