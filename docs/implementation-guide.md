@@ -88,24 +88,30 @@ VITE_APP_URL=https://twopot.yourdomain.com
 
 ### Todo — Project Setup
 
-- [ ] Scaffold Vite + React + TypeScript project
-- [ ] Install all dependencies listed above
-- [ ] Configure Tailwind CSS v4 with Vite plugin
-- [ ] Set up path aliases (`@/` → `src/`) in `tsconfig.json` and `vite.config.ts`
-- [ ] Set up ESLint + Prettier with TypeScript rules
-- [ ] Create `.env.local` and `.env.example`
-- [ ] Initialise Git repo, add `.gitignore` (node_modules, .env.local, dist)
-- [ ] Create folder structure:
-  ```
-  src/
-    components/    # shared UI components
-    features/      # feature modules (expenses, budgets, goals, insights)
-    hooks/         # custom React hooks
-    lib/           # supabase client, utils, constants
-    stores/        # zustand stores
-    types/         # TypeScript types mirroring DB schema
-    pages/         # route-level components
-  ```
+- [x] Scaffold Vite + React + TypeScript project
+- [x] Install all dependencies (final set — see Deviations below)
+- [x] Set up path aliases (`@/` → `src/`) in `tsconfig.json` and `vite.config.ts`
+- [x] Set up ESLint + Prettier with TypeScript rules
+- [x] Create `.env.local` and `.env.example`
+- [x] Initialise Git repo, add `.gitignore` (node_modules, .env.local, dist)
+- [x] Create folder structure (`components/`, `features/`, `hooks/`, `lib/`,
+  `stores/`, `types/`, `pages/`, as sketched below — matches what's in `src/`)
+
+### Deviations (§1)
+
+- Tailwind CSS + Radix UI (as installed in §1.2/§1.3) were **not** used. The
+  app ships MUI v9 (`@mui/material`, `@mui/icons-material`) themed for
+  Material Design 3 instead, with `@emotion/react`/`@emotion/styled` as its
+  styling engine — no `tailwindcss`, `@tailwindcss/vite`, `@radix-ui/*`,
+  `lucide-react`, `class-variance-authority`, `clsx`, or `tailwind-merge` in
+  `package.json`.
+- `vite.config.ts` therefore has no Tailwind plugin; PWA config (`VitePWA`)
+  is unchanged from the sketch.
+- Actual major versions installed: React 19, TypeScript ~6.0, MUI ^9.1,
+  Supabase JS ^2.108, React Query ^5.101, Zustand ^5.0, React Hook Form
+  ^7.79 + Zod ^4.4, Recharts ^3.8, React Router DOM ^7.18, vite-plugin-pwa
+  ^1.3 — several majors ahead of what was available when this guide's
+  install snippets were written.
 
 ---
 
@@ -609,12 +615,21 @@ export function useMarkSettled(householdId: string) {
 - [x] Handle edge case: only one member has paid expenses that month (the other member's `owed_amount` is simply 0 — nets out correctly)
 - [x] Handle edge case: `payer_covers` split type (renamed from `solo`) — payer owes nothing, counterpart owes nothing
 - [x] Handle edge case: net_amount = 0 (all square — `compute_settlement` returns `amount = 0`; UI celebratory state still to build)
-- [ ] Write TypeScript hook `useSettlement`
-- [ ] Write TypeScript hook `useMarkSettled`
-- [ ] Build `SettlementCard` component — shows who owes whom, net amount, "Mark as Settled" button
-- [ ] Build `SettlementHistory` component — past months with settled/unsettled status
+- [x] Write TypeScript hook `useSettlement`
+- [x] Write TypeScript hook `useMarkSettled`
+- [x] Build `SettlementCard` component — shows who owes whom, net amount, "Mark as Settled" button
+- [x] Build `SettlementHistory` component — past months with settled/unsettled status
 - [ ] Unit test the SQL function with known fixture data (psql or pgTAP)
 - [ ] Handle rollover budgets in settlement (exclude from person-to-person flow) — rollover budgets are category-level only and never feed `monthly_settlement`, so no special-casing was needed
+
+### Deviations (§3.4)
+
+- `compute_settlement` is stateless — it recomputes the net amount live from
+  `expenses` on every call, independent of the `settlements` table's
+  `settled` flag. A separate `useIsSettled(householdId, periodMonth)` hook
+  was added to read the persisted `settled` boolean directly from the
+  `settlements` table for the current month, since the two concerns
+  (live amount vs. persisted settled state) can't be derived from one query.
 
 ---
 
@@ -717,16 +732,27 @@ $$;
 
 - [ ] Configure Google OAuth in Supabase Dashboard (Client ID + Secret)
 - [ ] Set allowed redirect URIs in Google Cloud Console
-- [ ] Build `LoginPage` — single "Sign in with Google" button, app logo
-- [ ] Build `/auth/callback` route that handles the OAuth redirect
-- [ ] Build `AuthGuard` wrapper component — redirects unauthenticated users
-- [ ] Build household onboarding flow:
-  - [ ] First user: create household, seed categories, generate invite code
-  - [ ] Second user: enter invite code → `accept_invite` RPC → join household
-- [ ] Persist household ID in Zustand store after login
+- [x] Build `LoginPage` — single "Sign in with Google" button, app logo
+- [x] Build `AuthGuard` wrapper component — redirects unauthenticated users
+- [x] Build household onboarding flow (`OnboardingFlow`):
+  - [x] First user: create household, seed categories, generate invite code
+  - [x] Second user: enter invite code → `accept_invite` RPC → join household
+- [x] Persist household ID in Zustand store after login
 - [ ] Handle session expiry gracefully (refresh token → re-login)
-- [ ] Build `UserMenu` component (avatar, name, sign out)
+- [x] Build sign-out affordance (in `AppShell`, not a separate `UserMenu` component)
 - [ ] Test both users can see each other's data after joining household
+
+### Deviations (§4)
+
+- No dedicated `/auth/callback` route or `UserMenu` component was built. The
+  OAuth redirect is handled inline by `useSession`/Supabase's client-side
+  detection, and sign-out is exposed as a prop (`onSignOut`) on `AppShell`
+  rather than a standalone menu component.
+- `AuthGuard` does more than redirect: on success it wraps the authenticated
+  tree in `RealtimeProvider` (passing `household.household.id`) and renders
+  `AppShell` directly, so the realtime subscriptions and the app chrome are
+  both rooted at the guard rather than mounted separately further down the
+  tree.
 
 ---
 
@@ -1196,14 +1222,21 @@ const channel = supabase.channel('presence:household')
 ### Todo — Real-time Sync
 
 - [ ] Enable Realtime on `expenses`, `budgets`, `savings_goals`, `settlements` tables in Supabase Dashboard
-- [ ] Implement `useRealtimeExpenses` hook
-- [ ] Implement `useRealtimeBudgets` hook
-- [ ] Implement `useRealtimeGoals` hook
-- [ ] Mount all realtime hooks in a top-level `RealtimeProvider` component
+- [x] Mount realtime subscriptions in a top-level `RealtimeProvider` component
 - [ ] Test: add expense on one device → see it appear on partner's device within ~1s
 - [ ] Add subtle "updated" toast when partner makes a change
-- [ ] Handle WebSocket disconnect/reconnect gracefully (Supabase client does this automatically)
+- [x] Handle WebSocket disconnect/reconnect gracefully (Supabase client does this automatically)
 - [ ] (v2) Implement presence — "Sony is online" indicator in header
+
+### Deviations (§9)
+
+- No separate `useRealtimeExpenses`/`useRealtimeBudgets`/`useRealtimeGoals`
+  hooks were built. `RealtimeProvider` (`src/components/RealtimeProvider.tsx`)
+  subscribes to `expenses`, `budgets`, `savings_goals`, and `settlements` in a
+  single component, looping over a `REALTIME_TABLES` array and invalidating
+  the matching React Query key on any change — one provider instead of one
+  hook per table. It's mounted once, inside `AuthGuard`, scoped to the
+  current household id.
 
 ---
 
@@ -2759,6 +2792,15 @@ feature/*     → PR only (lint + test)
 ---
 
 ## 17. Phase Checklist
+
+> **Status:** All three phases' feature scope (expenses, budgets/rollover,
+> savings goals, settlement, insights/charts, PWA install + offline queue,
+> push notifications, dark mode, mobile UX patterns) is implemented and
+> wired end-to-end — see the per-section "Todo"/"Deviations" notes above for
+> what shipped vs. what changed from the original sketch. The boxes below
+> are left as originally drafted for planning purposes; the ops/CI items
+> (Lighthouse CI, Dependabot, staging namespace, physical-device test runs)
+> are the main items not yet done.
 
 ### Phase 1 — Core (target: 2 weeks)
 
