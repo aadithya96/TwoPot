@@ -48,11 +48,19 @@ kubectl apply -f k8s/
 
 ## CI/CD (`.github/workflows/deploy.yaml`)
 
-On push to `main`: install deps, type-check, lint, test, build, build & push
-the Docker image, then apply the k8s manifests / roll the Deployment.
+On push to `main`: install deps, type-check, lint, test, build, deploy the
+Supabase Edge Functions, build & push the Docker image, then apply the k8s
+manifests / roll the Deployment.
 
 Required GitHub Actions secrets:
 
 - `KUBE_CONFIG` — base64-encoded kubeconfig for the cluster
 - `REGISTRY_USERNAME` / `REGISTRY_PASSWORD` — container registry credentials
 - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_APP_URL`, `VITE_VAPID_PUBLIC_KEY` — build-time env vars
+- `SUPABASE_ACCESS_TOKEN` — personal access token for the Supabase CLI
+  (Account → Access Tokens)
+- `SUPABASE_PROJECT_REF` — the target project's ref id
+
+Note: the workflow deploys the functions but does **not** set their secrets.
+Configure `ANTHROPIC_API_KEY` once (see Supabase step 5 above) so `scan-receipt`
+and `parse-expense` can call the vision/text model.
