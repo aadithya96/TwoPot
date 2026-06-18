@@ -1,5 +1,6 @@
 import { Box } from '@mui/material'
 import { Outlet } from 'react-router-dom'
+import { APP_MAX_WIDTH } from '@/lib/layout'
 import { TopAppBar } from './TopAppBar'
 import { BottomNav } from './BottomNav'
 
@@ -36,7 +37,9 @@ export function AppShell({ title, avatarUrl, displayName, onSignOut }: AppShellP
           paddingBottom: 'calc(80px + env(safe-area-inset-bottom))',
         }}
       >
-        <Outlet />
+        <Box sx={{ width: '100%', maxWidth: APP_MAX_WIDTH, mx: 'auto' }}>
+          <Outlet />
+        </Box>
       </Box>
       <BottomNav />
     </Box>

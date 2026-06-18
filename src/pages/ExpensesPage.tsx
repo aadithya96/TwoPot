@@ -5,6 +5,7 @@ import { useHouseholdStore } from '@/stores/householdStore'
 import { useCategories } from '@/hooks/useCategories'
 import { ExpenseList, RecurringList, AddExpenseSheet } from '@/features/expenses'
 import { useCurrentUser } from '@/features/auth'
+import { fabRightOffset } from '@/lib/layout'
 
 type ExpensesTab = 'all' | 'recurring'
 
@@ -47,7 +48,7 @@ export function ExpensesPage() {
         color="primary"
         aria-label="Add expense"
         onClick={() => setIsAddOpen(true)}
-        sx={{ position: 'fixed', bottom: 88, right: 16 }}
+        sx={{ position: 'fixed', bottom: 88, right: fabRightOffset }}
       >
         <AddOutlinedIcon />
       </Fab>
