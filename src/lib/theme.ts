@@ -31,6 +31,30 @@ export const theme = createTheme({
   },
   shape: { borderRadius: 16 },
   components: {
+    MuiTypography: {
+      // Custom MD3 variants have no built-in element mapping, so MUI would
+      // render them as inline <span>. Map them to block-level elements (labels
+      // stay inline) so headings/body text stack instead of flowing together.
+      defaultProps: {
+        variantMapping: {
+          displayLarge: 'h1',
+          displayMedium: 'h1',
+          displaySmall: 'h2',
+          headlineLarge: 'h2',
+          headlineMedium: 'h3',
+          headlineSmall: 'h3',
+          titleLarge: 'h4',
+          titleMedium: 'h6',
+          titleSmall: 'h6',
+          bodyLarge: 'p',
+          bodyMedium: 'p',
+          bodySmall: 'p',
+          labelLarge: 'span',
+          labelMedium: 'span',
+          labelSmall: 'span',
+        },
+      },
+    },
     MuiButton: {
       styleOverrides: {
         root: { borderRadius: 20, textTransform: 'none', minHeight: 40 },
