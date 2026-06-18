@@ -41,6 +41,7 @@ export interface Database {
           name: string
           invite_code: string | null
           invite_expires_at: string | null
+          income_split_enabled: boolean
           created_at: string
         }
         Insert: {
@@ -48,6 +49,7 @@ export interface Database {
           name?: string
           invite_code?: string | null
           invite_expires_at?: string | null
+          income_split_enabled?: boolean
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['households']['Insert']>
@@ -58,12 +60,14 @@ export interface Database {
           household_id: string
           user_id: string
           role: string
+          income: number | null
           joined_at: string
         }
         Insert: {
           household_id: string
           user_id: string
           role?: string
+          income?: number | null
           joined_at?: string
         }
         Update: Partial<Database['public']['Tables']['household_members']['Insert']>

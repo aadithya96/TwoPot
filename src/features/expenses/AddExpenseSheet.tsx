@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
@@ -24,6 +25,7 @@ import { ReceiptUploader } from './ReceiptUploader'
 import { useBackButton } from '@/hooks/useBackButton'
 import { useVisualViewport } from '@/hooks/useVisualViewport'
 import { useHouseholdStore } from '@/stores/householdStore'
+import { useIncomeSplit } from '@/features/splitting'
 import type { Category } from '@/types/app'
 
 export interface AddExpenseSheetProps {
@@ -72,6 +74,22 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
   })
 
   const owner = watch('owner')
+  const { data: incomeSplit } = useIncomeSplit(householdId ?? undefined)
+
+  // For a new expense, default the shared split to each partner's income ratio
+  // when income-based splitting is enabled. Only applies while the split is
+  // still at its 50/50 default, so it never overrides a manual choice or an
+  // edited expense's saved split.
+  const incomeSplitEnabled = incomeSplit?.enabled ?? false
+  const incomeSplitPctA = incomeSplit?.defaultPctA ?? null
+  useEffect(() => {
+    if (open && !expenseId && incomeSplitEnabled && incomeSplitPctA != null) {
+      if (getValues('splitType') === 'equal') {
+        setValue('splitType', 'custom')
+        setValue('splitPctA', incomeSplitPctA)
+      }
+    }
+  }, [open, expenseId, incomeSplitEnabled, incomeSplitPctA, getValues, setValue])
 
   // Scan a freshly uploaded receipt and prefill only fields the user hasn't
   // already set, so it never overwrites manual input. Failures are non-fatal —

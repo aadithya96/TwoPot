@@ -22,6 +22,7 @@ import { Link as RouterLink } from 'react-router-dom'
 import { useCurrentUser, signOut } from '@/features/auth'
 import { useHouseholdStore } from '@/stores/householdStore'
 import { useDarkMode } from '@/hooks/useDarkMode'
+import { IncomeSplitSettings } from '@/features/splitting'
 
 /**
  * Settings screen: profile summary, dark-mode toggle, links to notification and household
@@ -30,6 +31,7 @@ import { useDarkMode } from '@/hooks/useDarkMode'
 export function SettingsPage() {
   const { data: currentUser } = useCurrentUser()
   const members = useHouseholdStore((state) => state.members)
+  const householdId = useHouseholdStore((state) => state.householdId)
   const fallbackProfile = members[0] ?? null
 
   const displayName = currentUser?.display_name ?? fallbackProfile?.display_name ?? 'You'
@@ -101,6 +103,8 @@ export function SettingsPage() {
           </MuiLink>
         </CardContent>
       </Card>
+
+      {householdId && <IncomeSplitSettings householdId={householdId} />}
 
       <Button
         variant="text"

@@ -14,14 +14,14 @@ Working backlog of UI/UX and feature work. Items move from **Up next** →
 - [x] Expense search & filters — search box + category/payer/type filters
 - [x] First-run "Get started" setup checklist on Home
 - [x] Receipt photos + server-side OCR autofill (`scan-receipt` edge function)
+- [x] Income-based fair splitting — incomes in Settings; shared expenses
+      default to the income ratio when enabled (migration `013_member_income`)
 
 ---
 
 ## ▶️ Up next (top recommendations)
 
-1. [ ] **Income-based fair splitting** — each partner sets their income; shared
-       expenses default to splitting by income ratio instead of 50/50.
-2. [ ] **Natural-language quick-add** — type "spent 250 on groceries yesterday"
+1. [ ] **Natural-language quick-add** — type "spent 250 on groceries yesterday"
        and an LLM parses amount/category/date/description (reuses the OCR
        edge-function pattern).
 3. [ ] **Custom category management** — CRUD UI for categories (currently only
@@ -31,7 +31,7 @@ Working backlog of UI/UX and feature work. Items move from **Up next** →
 
 ## 🍯 Signature two-person features
 
-- [ ] Income-based fair splitting *(see Up next)*
+- [x] Income-based fair splitting
 - [ ] "Two pots" income model — track income into a shared pot + two personal
       pots, with auto-allocation rules
 - [ ] Partner balance over time — running "who owes whom" trend, not just the
