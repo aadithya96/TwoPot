@@ -14,9 +14,6 @@ jobs:
   preflight:
     runs-on: ubuntu-latest
     env:
-      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-      VITE_APP_URL: ${{ secrets.VITE_APP_URL }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -27,7 +24,6 @@ jobs:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
       VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
     steps:
       - name: Validate secrets
@@ -37,10 +33,9 @@ jobs:
           require() { [ -n "${2:-}" ] || { echo "::error::Required secret $1 is not set"; missing=1; }; }
           warn()    { [ -n "${2:-}" ] || echo "::warning::Optional secret $1 not set — $3"; }
 
-          # Required: app cannot build/connect or pipeline cannot deploy without these.
-          require VITE_SUPABASE_URL        "$VITE_SUPABASE_URL"
-          require VITE_SUPABASE_ANON_KEY   "$VITE_SUPABASE_ANON_KEY"
-          require VITE_APP_URL             "$VITE_APP_URL"
+          # Required. The frontend build vars (VITE_SUPABASE_URL / ANON_KEY and the
+          # service-role key) are derived later from the project ref + access token,
+          # and VITE_APP_URL from the ingress host, so they are not secrets here.
           require SUPABASE_ACCESS_TOKEN    "$SUPABASE_ACCESS_TOKEN"
           require SUPABASE_PROJECT_REF     "$SUPABASE_PROJECT_REF"
           require SUPABASE_DB_PASSWORD     "$SUPABASE_DB_PASSWORD"
@@ -53,7 +48,6 @@ jobs:
           warn ANTHROPIC_API_KEY      "$ANTHROPIC_API_KEY"      "AI receipt scan / quick-add autofill disabled"
           warn VAPID_SUBJECT          "$VAPID_SUBJECT"          "push sending (send-push) disabled"
           warn VAPID_PRIVATE_KEY      "$VAPID_PRIVATE_KEY"      "push sending (send-push) disabled"
-          warn SUPABASE_SERVICE_ROLE_KEY "$SUPABASE_SERVICE_ROLE_KEY" "twopot-supabase cluster secret will carry an empty service-role key"
           warn GHCR_PULL_TOKEN        "$GHCR_PULL_TOKEN"        "image pulls fall back to the ephemeral GITHUB_TOKEN"
 
           if [ "$missing" -ne 0 ]; then
@@ -89,6 +83,48 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v6.0.3
+
+      # Derive the frontend build vars instead of requiring extra secrets:
+      #   VITE_SUPABASE_URL  ← https://<project-ref>.supabase.co
+      #   VITE_SUPABASE_ANON_KEY / service-role key ← Supabase Management API
+      #   VITE_APP_URL       ← the host in k8s/ingress.yaml
+      # Resolved values are exported via $GITHUB_ENV for later steps; the keys
+      # are masked so they never print in logs.
+      - name: Resolve Supabase + app config
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          set -euo pipefail
+
+          url="https://${SUPABASE_PROJECT_REF}.supabase.co"
+
+          keys_json="$(curl -fsSL \
+            -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+            "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/api-keys?reveal=true")"
+          anon="$(printf '%s' "$keys_json" | jq -r '.[] | select(.name=="anon") | .api_key')"
+          svc="$(printf '%s' "$keys_json"  | jq -r '.[] | select(.name=="service_role") | .api_key')"
+          if [ -z "$anon" ] || [ "$anon" = "null" ]; then
+            echo "::error::Could not fetch the anon key from the Supabase Management API. Check SUPABASE_ACCESS_TOKEN / SUPABASE_PROJECT_REF."
+            exit 1
+          fi
+          echo "::add-mask::$anon"
+          [ -n "$svc" ] && [ "$svc" != "null" ] && echo "::add-mask::$svc" || svc=""
+
+          host="$(grep -m1 -E 'host:[[:space:]]' k8s/ingress.yaml | sed -E 's/.*host:[[:space:]]*//' || true)"
+          if [ -z "$host" ]; then
+            echo "::error::Could not read the ingress host from k8s/ingress.yaml."
+            exit 1
+          fi
+          app_url="https://${host}"
+
+          {
+            echo "VITE_SUPABASE_URL=$url"
+            echo "VITE_SUPABASE_ANON_KEY=$anon"
+            echo "VITE_APP_URL=$app_url"
+            echo "SUPABASE_SERVICE_ROLE_KEY_RESOLVED=$svc"
+          } >> "$GITHUB_ENV"
+          echo "Resolved VITE_SUPABASE_URL=$url, VITE_APP_URL=$app_url (anon/service keys masked)."
 
       - uses: pnpm/action-setup@v6.0.9
 
@@ -157,9 +193,9 @@ jobs:
           push: true
           tags: ${{ env.IMAGE_NAME }}:latest
           build-args: |
-            VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}
-            VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
-            VITE_APP_URL=${{ secrets.VITE_APP_URL }}
+            VITE_SUPABASE_URL=${{ env.VITE_SUPABASE_URL }}
+            VITE_SUPABASE_ANON_KEY=${{ env.VITE_SUPABASE_ANON_KEY }}
+            VITE_APP_URL=${{ env.VITE_APP_URL }}
             VITE_VAPID_PUBLIC_KEY=${{ secrets.VITE_VAPID_PUBLIC_KEY }}
 
       # The k3s API server lives on a private VM behind NAT and is not reachable
@@ -192,9 +228,9 @@ jobs:
         env:
           GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SUPABASE_URL_VALUE: ${{ secrets.VITE_SUPABASE_URL }}
-          SUPABASE_ANON_KEY_VALUE: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY_VALUE: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_URL_VALUE: ${{ env.VITE_SUPABASE_URL }}
+          SUPABASE_ANON_KEY_VALUE: ${{ env.VITE_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY_VALUE: ${{ env.SUPABASE_SERVICE_ROLE_KEY_RESOLVED }}
           SUPABASE_PROJECT_REF_VALUE: ${{ secrets.SUPABASE_PROJECT_REF }}
           SUPABASE_ACCESS_TOKEN_VALUE: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD_VALUE: ${{ secrets.SUPABASE_DB_PASSWORD }}
