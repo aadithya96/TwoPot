@@ -15,15 +15,18 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.3
 
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v6.4.0
         with:
           node-version: 20
+          cache: pnpm
 
-      - run: npm ci
-      - run: npm run type-check
-      - run: npm run lint
-      - run: npm run test
-      - run: npm run build
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run type-check
+      - run: pnpm run lint
+      - run: pnpm run test
+      - run: pnpm run build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}

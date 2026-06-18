@@ -3,15 +3,21 @@
 ## Prerequisites
 
 - Node.js 20+
-- npm 10+
+- pnpm 10+ (enable with `corepack enable`, or install via `npm i -g pnpm`)
 - Docker (for running Supabase locally) and the Supabase CLI
+
+> This project uses **pnpm**, not npm. pnpm installs platform-specific native
+> binaries (e.g. the rolldown/Vite bindings) reliably across Windows, macOS, and
+> Linux, avoiding the npm optional-dependency bug
+> ([npm/cli#4828](https://github.com/npm/cli/issues/4828)). The pinned version
+> lives in the `packageManager` field of `package.json`.
 
 ## Clone and install
 
 ```bash
 git clone <repo-url> twopot
 cd twopot
-npm install
+pnpm install
 ```
 
 ## Environment variables
@@ -38,14 +44,14 @@ supabase gen types typescript --local > src/types/db.ts
 ## Run the dev server
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 Open http://localhost:5173.
 
 ## Useful scripts
 
-- `npm run type-check` — TypeScript strict check, zero errors required
-- `npm run lint` — ESLint
-- `npm run test` — Vitest
-- `npm run build` — production build
+- `pnpm type-check` — TypeScript strict check, zero errors required
+- `pnpm lint` — ESLint
+- `pnpm test` — Vitest
+- `pnpm build` — production build
