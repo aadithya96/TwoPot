@@ -6,12 +6,13 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
+  ingressClassName: traefik
   tls:
     - hosts:
-        - twopot.yourdomain.com
+        - ad-labs.duckdns.org
       secretName: twopot-tls
   rules:
-    - host: twopot.yourdomain.com
+    - host: ad-labs.duckdns.org
       http:
         paths:
           - path: /
