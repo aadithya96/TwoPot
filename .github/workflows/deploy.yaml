@@ -3,11 +3,67 @@ name: Deploy
 on:
   push:
     branches: [main]
+
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository }}
-  
+
 jobs:
+  # Fail fast (before any migration / build / deploy work) if a secret the
+  # application or pipeline needs is missing. Required secrets abort the run;
+  # optional ones only warn so degraded features are visible in the log.
+  preflight:
+    runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      VITE_APP_URL: ${{ secrets.VITE_APP_URL }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+      TS_OAUTH_CLIENT_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+      TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
+      VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
+      VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+    steps:
+      - name: Validate secrets
+        run: |
+          set -uo pipefail
+          missing=0
+          require() { [ -n "${2:-}" ] || { echo "::error::Required secret $1 is not set"; missing=1; }; }
+          warn()    { [ -n "${2:-}" ] || echo "::warning::Optional secret $1 not set — $3"; }
+
+          # Required: app cannot build/connect or pipeline cannot deploy without these.
+          require VITE_SUPABASE_URL        "$VITE_SUPABASE_URL"
+          require VITE_SUPABASE_ANON_KEY   "$VITE_SUPABASE_ANON_KEY"
+          require VITE_APP_URL             "$VITE_APP_URL"
+          require SUPABASE_ACCESS_TOKEN    "$SUPABASE_ACCESS_TOKEN"
+          require SUPABASE_PROJECT_REF     "$SUPABASE_PROJECT_REF"
+          require SUPABASE_DB_PASSWORD     "$SUPABASE_DB_PASSWORD"
+          require KUBE_CONFIG              "$KUBE_CONFIG"
+          require TS_OAUTH_CLIENT_ID       "$TS_OAUTH_CLIENT_ID"
+          require TS_OAUTH_SECRET          "$TS_OAUTH_SECRET"
+
+          # Optional: feature degrades gracefully if absent.
+          warn VITE_VAPID_PUBLIC_KEY  "$VITE_VAPID_PUBLIC_KEY"  "web push subscription disabled in the frontend"
+          warn ANTHROPIC_API_KEY      "$ANTHROPIC_API_KEY"      "AI receipt scan / quick-add autofill disabled"
+          warn VAPID_SUBJECT          "$VAPID_SUBJECT"          "push sending (send-push) disabled"
+          warn VAPID_PRIVATE_KEY      "$VAPID_PRIVATE_KEY"      "push sending (send-push) disabled"
+          warn SUPABASE_SERVICE_ROLE_KEY "$SUPABASE_SERVICE_ROLE_KEY" "twopot-supabase cluster secret will carry an empty service-role key"
+          warn GHCR_PULL_TOKEN        "$GHCR_PULL_TOKEN"        "image pulls fall back to the ephemeral GITHUB_TOKEN"
+
+          if [ "$missing" -ne 0 ]; then
+            echo "::error::One or more required secrets are missing; aborting before deploy."
+            exit 1
+          fi
+          echo "All required secrets present."
+
   migrate:
+    needs: preflight
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6.0.3
@@ -60,6 +116,32 @@ jobs:
             supabase functions deploy "$fn" --project-ref "$SUPABASE_PROJECT_REF"
           done
 
+      - name: Set Supabase Edge Function secrets
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL: ${{ secrets.ANTHROPIC_MODEL }}
+          VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
+          VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          # Edge Function secret names cannot use the reserved SUPABASE_ prefix.
+          # SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are injected automatically
+          # by the platform, so we never set them here.
+          args=()
+          [ -n "${ANTHROPIC_API_KEY:-}" ] && args+=("ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}")
+          [ -n "${ANTHROPIC_MODEL:-}" ]   && args+=("ANTHROPIC_MODEL=${ANTHROPIC_MODEL}")
+          [ -n "${VAPID_SUBJECT:-}" ]     && args+=("VAPID_SUBJECT=${VAPID_SUBJECT}")
+          [ -n "${VAPID_PUBLIC_KEY:-}" ]  && args+=("VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}")
+          [ -n "${VAPID_PRIVATE_KEY:-}" ] && args+=("VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}")
+          if [ ${#args[@]} -gt 0 ]; then
+            supabase secrets set "${args[@]}" --project-ref "$SUPABASE_PROJECT_REF"
+          else
+            echo "No edge-function secrets configured; skipping (AI autofill / push may be disabled)."
+          fi
+
       - uses: docker/login-action@v4.2.0
         with:
           registry: ghcr.io
@@ -68,17 +150,27 @@ jobs:
 
       - name: Lowercase image name
         run: echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
-        
+
       - uses: docker/build-push-action@v7
         with:
           context: .
           push: true
-          tags: ${{ env.IMAGE_NAME  }}:latest
+          tags: ${{ env.IMAGE_NAME }}:latest
           build-args: |
             VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}
             VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
             VITE_APP_URL=${{ secrets.VITE_APP_URL }}
             VITE_VAPID_PUBLIC_KEY=${{ secrets.VITE_VAPID_PUBLIC_KEY }}
+
+      # The k3s API server lives on a private VM behind NAT and is not reachable
+      # from a GitHub-hosted runner. Join the tailnet so kubectl can reach it via
+      # the VM's Tailscale IP / MagicDNS name (see KUBE_CONFIG note in DEPLOYMENT.md).
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
 
       - name: Configure kubeconfig
         env:
@@ -87,11 +179,57 @@ jobs:
           mkdir -p "$HOME/.kube"
           printf '%s' "$KUBE_CONFIG_B64" | tr -d '[:space:]' | base64 -d > "$HOME/.kube/config"
           if ! grep -q 'apiVersion' "$HOME/.kube/config"; then
-            echo "::error::Decoded KUBE_CONFIG does not look like a kubeconfig. Ensure the secret is the base64 of k3s.yaml (e.g. 'base64 -w0 k3s.yaml')."
+            echo "::error::Decoded KUBE_CONFIG does not look like a kubeconfig. It must be the base64 of your k3s kubeconfig (e.g. 'base64 -w0 k3s.yaml') with 'server:' pointing at the VM's Tailscale IP/MagicDNS name, not 127.0.0.1."
             exit 1
           fi
           chmod 600 "$HOME/.kube/config"
           echo "KUBECONFIG=$HOME/.kube/config" >> "$GITHUB_ENV"
 
-      - run: kubectl apply -f k8s/
-      - run: kubectl rollout restart deployment/twopot -n twopot
+      - name: Create namespace
+        run: kubectl apply -f k8s/namespace.yaml
+
+      - name: Create / refresh cluster Secrets
+        env:
+          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SUPABASE_URL_VALUE: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_ANON_KEY_VALUE: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY_VALUE: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_PROJECT_REF_VALUE: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_ACCESS_TOKEN_VALUE: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD_VALUE: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          set -euo pipefail
+          # Image-pull secret so the cluster can pull the private GHCR image.
+          # Prefer a dedicated read:packages PAT (GHCR_PULL_TOKEN); the ephemeral
+          # GITHUB_TOKEN expires when the job ends, which would break later pulls
+          # (e.g. after a node reboot or pod reschedule).
+          pull_token="${GHCR_PULL_TOKEN:-$GITHUB_TOKEN}"
+          kubectl create secret docker-registry ghcr-creds \
+            --namespace twopot \
+            --docker-server=ghcr.io \
+            --docker-username="${{ github.actor }}" \
+            --docker-password="$pull_token" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          # Supabase config + CLI/project credentials as a cluster Secret, so jobs
+          # on the cluster (e.g. a maintenance/CronJob using the Supabase CLI) can
+          # read them. The static nginx frontend bakes VITE_* at build time and does
+          # not read this at runtime.
+          kubectl create secret generic twopot-supabase \
+            --namespace twopot \
+            --from-literal=SUPABASE_URL="${SUPABASE_URL_VALUE:-}" \
+            --from-literal=SUPABASE_ANON_KEY="${SUPABASE_ANON_KEY_VALUE:-}" \
+            --from-literal=SUPABASE_SERVICE_ROLE_KEY="${SUPABASE_SERVICE_ROLE_KEY_VALUE:-}" \
+            --from-literal=SUPABASE_PROJECT_REF="${SUPABASE_PROJECT_REF_VALUE:-}" \
+            --from-literal=SUPABASE_ACCESS_TOKEN="${SUPABASE_ACCESS_TOKEN_VALUE:-}" \
+            --from-literal=SUPABASE_DB_PASSWORD="${SUPABASE_DB_PASSWORD_VALUE:-}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy manifests
+        run: kubectl apply -f k8s/
+
+      - name: Roll out new image
+        run: |
+          kubectl rollout restart deployment/twopot -n twopot
+          kubectl rollout status deployment/twopot -n twopot --timeout=180s

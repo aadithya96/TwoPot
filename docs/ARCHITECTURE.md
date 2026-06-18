@@ -13,7 +13,7 @@ src/
   pages/        thin route-level wrappers around features
 supabase/
   migrations/   numbered SQL migrations
-  functions/    Deno edge functions (recurring-expenses, send-push)
+  functions/    Deno edge functions (recurring-expenses, send-push, scan-receipt, parse-expense)
 k8s/            k3s manifests
 ```
 
