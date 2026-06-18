@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
@@ -14,16 +15,21 @@ import {
   ToggleButtonGroup,
   Typography,
   CircularProgress,
+  InputAdornment,
+  IconButton,
 } from '@mui/material'
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import { useSnackbar } from 'notistack'
 import { AmountField, CategoryPicker, SplitSelector } from '@/components/forms'
 import { expenseSchema, type ExpenseFormValues } from './expenseSchema'
 import { useAddExpense, useUpdateExpense } from './useExpenses'
 import { useScanReceipt } from './useScanReceipt'
+import { useParseExpense } from './useParseExpense'
 import { ReceiptUploader } from './ReceiptUploader'
 import { useBackButton } from '@/hooks/useBackButton'
 import { useVisualViewport } from '@/hooks/useVisualViewport'
 import { useHouseholdStore } from '@/stores/householdStore'
+import { useIncomeSplit } from '@/features/splitting'
 import type { Category } from '@/types/app'
 
 export interface AddExpenseSheetProps {
@@ -62,7 +68,9 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
   const addExpense = useAddExpense()
   const updateExpense = useUpdateExpense()
   const scanReceipt = useScanReceipt()
+  const parseExpense = useParseExpense()
   const { enqueueSnackbar } = useSnackbar()
+  const [quickText, setQuickText] = useState('')
 
   useBackButton(open, onClose)
 
@@ -72,6 +80,22 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
   })
 
   const owner = watch('owner')
+  const { data: incomeSplit } = useIncomeSplit(householdId ?? undefined)
+
+  // For a new expense, default the shared split to each partner's income ratio
+  // when income-based splitting is enabled. Only applies while the split is
+  // still at its 50/50 default, so it never overrides a manual choice or an
+  // edited expense's saved split.
+  const incomeSplitEnabled = incomeSplit?.enabled ?? false
+  const incomeSplitPctA = incomeSplit?.defaultPctA ?? null
+  useEffect(() => {
+    if (open && !expenseId && incomeSplitEnabled && incomeSplitPctA != null) {
+      if (getValues('splitType') === 'equal') {
+        setValue('splitType', 'custom')
+        setValue('splitPctA', incomeSplitPctA)
+      }
+    }
+  }, [open, expenseId, incomeSplitEnabled, incomeSplitPctA, getValues, setValue])
 
   // Scan a freshly uploaded receipt and prefill only fields the user hasn't
   // already set, so it never overwrites manual input. Failures are non-fatal —
@@ -98,6 +122,25 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
       )
     } catch {
       enqueueSnackbar('Could not scan receipt — enter details manually', { variant: 'warning' })
+    }
+  }
+
+  // Parse a natural-language note ("250 groceries yesterday") into the form.
+  // Quick-add is an explicit user action, so it overrides current field values.
+  const handleQuickAdd = async () => {
+    const text = quickText.trim()
+    if (!text) return
+    try {
+      const result = await parseExpense.mutateAsync({ text, categories })
+      if (result.amountRupees != null) {
+        setValue('amount', Math.round(result.amountRupees * 100), { shouldValidate: true })
+      }
+      if (result.date) setValue('date', result.date, { shouldValidate: true })
+      if (result.description) setValue('description', result.description, { shouldValidate: true })
+      if (result.categoryId) setValue('categoryId', result.categoryId, { shouldValidate: true })
+      enqueueSnackbar('Filled from your note — review and save', { variant: 'success' })
+    } catch {
+      enqueueSnackbar('Could not parse that — enter details manually', { variant: 'warning' })
     }
   }
 
@@ -134,6 +177,43 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
         <Typography variant="titleLarge" sx={{ mb: 2 }}>
           {expenseId ? 'Edit expense' : 'Add expense'}
         </Typography>
+
+        {!expenseId && (
+          <TextField
+            value={quickText}
+            onChange={(event) => setQuickText(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault()
+                void handleQuickAdd()
+              }
+            }}
+            placeholder='Type it naturally, e.g. "250 groceries yesterday"'
+            disabled={parseExpense.isPending}
+            sx={{ mb: 2.5 }}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <AutoAwesomeIcon fontSize="small" color="primary" />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="Fill from note"
+                      onClick={() => void handleQuickAdd()}
+                      disabled={parseExpense.isPending || quickText.trim() === ''}
+                      edge="end"
+                    >
+                      {parseExpense.isPending ? <CircularProgress size={20} /> : <AutoAwesomeIcon />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+        )}
 
         <Stack spacing={2.5}>
           <Controller
