@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
+import { monthStartDate } from '@/lib/dates'
 import type { Settlement } from '@/types/app'
 
 /** Net settlement owed between household members for a given period, as returned by `compute_settlement`. */
@@ -21,7 +22,7 @@ export function useSettlement(
       if (!householdId) return null
       const { data, error } = await supabase.rpc('compute_settlement', {
         household_id: householdId,
-        period_month: periodMonth,
+        period_month: monthStartDate(periodMonth),
       })
       if (error) throw error
       const row = data?.[0]
@@ -45,7 +46,7 @@ export function useIsSettled(
         .from('settlements')
         .select('settled')
         .eq('household_id', householdId)
-        .eq('period_month', periodMonth)
+        .eq('period_month', monthStartDate(periodMonth))
         .maybeSingle()
       if (error) throw error
       return data?.settled ?? false
@@ -74,7 +75,7 @@ export function useMarkSettled() {
         .upsert(
           {
             household_id: input.householdId,
-            period_month: input.periodMonth,
+            period_month: monthStartDate(input.periodMonth),
             amount: input.amount,
             owed_by: input.owedBy,
             owed_to: input.owedTo,

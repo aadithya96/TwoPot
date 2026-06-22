@@ -13,6 +13,11 @@ export function monthRange(key: string): { start: string; end: string } {
   return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) }
 }
 
+/** Returns the first-of-month ISO date ("YYYY-MM-01") for a "YYYY-MM" key, as stored in date columns. */
+export function monthStartDate(key: string): string {
+  return `${key}-01`
+}
+
 /** Formats a "YYYY-MM" month key for display, e.g. "June 2025". */
 export function formatMonth(key: string): string {
   const [year, month] = key.split('-').map(Number)
