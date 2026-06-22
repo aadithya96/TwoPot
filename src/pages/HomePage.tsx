@@ -26,8 +26,7 @@ import { SettlementCard, useIsSettled, useSettlement } from '@/features/settleme
 import { PotsOverview } from '@/features/pots'
 import { useCurrentUser } from '@/features/auth'
 import { SetupChecklist, type SetupStep } from '@/features/home/SetupChecklist'
-
-const SETUP_DISMISSED_KEY = 'twopot:setupDismissed'
+import { SETUP_DISMISSED_KEY } from '@/lib/storageKeys'
 
 /**
  * Dashboard: current-month spend summary, member contribution chips, settlement card,
@@ -125,7 +124,7 @@ export function HomePage() {
         description: 'Share expenses, budgets, and goals.',
         done: members.length > 1,
         actionLabel: 'Invite',
-        onAction: () => navigate('/settings'),
+        onAction: () => navigate('/settings/household'),
       },
     ],
     [expenses, budgetUsage, goals, members, navigate]

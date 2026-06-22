@@ -102,14 +102,21 @@ export const theme = createTheme({
   },
 })
 
-/** MD3 dark theme, same shape overrides with dark-mode palette tokens. */
+/**
+ * MD3 dark theme. Reuses the light theme's typography/component overrides via
+ * `...theme`, but declares the palette from scratch (rather than spreading
+ * `theme.palette`) so MUI derives dark-mode `action`, `divider`, etc. for this
+ * mode. Spreading the computed light palette would carry over its black
+ * `action.active`, making default IconButton glyphs invisible on the dark
+ * background.
+ */
 export const darkTheme = createTheme({
   ...theme,
   palette: {
-    ...theme.palette,
     mode: 'dark',
     primary: { main: '#D0BCFF', light: '#EADDFF', dark: '#381E72', contrastText: '#371E73' },
     secondary: { main: '#CCC2DC', light: '#E8DEF8', dark: '#332D41', contrastText: '#332D41' },
+    error: { main: '#F2B8B5', light: '#F9DEDC', dark: '#8C1D18', contrastText: '#601410' },
     background: { default: '#1C1B1F', paper: '#1C1B1F' },
     text: { primary: '#E6E1E5', secondary: '#CAC4D0' },
   },
