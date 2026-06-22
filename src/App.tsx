@@ -1,32 +1,36 @@
-import { lazy } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AuthGuard } from '@/features/auth/AuthGuard'
 import { LoginPage } from '@/features/auth/LoginPage'
+import { lazyWithRetry } from '@/lib/lazyWithRetry'
 
-const OnboardingFlow = lazy(() =>
+const OnboardingFlow = lazyWithRetry(() =>
   import('@/features/auth/OnboardingFlow').then((m) => ({ default: m.OnboardingFlow }))
 )
-const HomePage = lazy(() => import('@/pages/HomePage').then((m) => ({ default: m.HomePage })))
-const ExpensesPage = lazy(() =>
+const HomePage = lazyWithRetry(() =>
+  import('@/pages/HomePage').then((m) => ({ default: m.HomePage }))
+)
+const ExpensesPage = lazyWithRetry(() =>
   import('@/pages/ExpensesPage').then((m) => ({ default: m.ExpensesPage }))
 )
-const BudgetsPage = lazy(() =>
+const BudgetsPage = lazyWithRetry(() =>
   import('@/pages/BudgetsPage').then((m) => ({ default: m.BudgetsPage }))
 )
-const GoalsPage = lazy(() => import('@/pages/GoalsPage').then((m) => ({ default: m.GoalsPage })))
-const InsightsPage = lazy(() =>
+const GoalsPage = lazyWithRetry(() =>
+  import('@/pages/GoalsPage').then((m) => ({ default: m.GoalsPage }))
+)
+const InsightsPage = lazyWithRetry(() =>
   import('@/pages/InsightsPage').then((m) => ({ default: m.InsightsPage }))
 )
-const SettingsPage = lazy(() =>
+const SettingsPage = lazyWithRetry(() =>
   import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage }))
 )
-const NotificationsPage = lazy(() =>
+const NotificationsPage = lazyWithRetry(() =>
   import('@/pages/NotificationsPage').then((m) => ({ default: m.NotificationsPage }))
 )
-const HouseholdPage = lazy(() =>
+const HouseholdPage = lazyWithRetry(() =>
   import('@/pages/HouseholdPage').then((m) => ({ default: m.HouseholdPage }))
 )
-const AuditLogPage = lazy(() =>
+const AuditLogPage = lazyWithRetry(() =>
   import('@/features/household').then((m) => ({ default: m.AuditLogPage }))
 )
 
