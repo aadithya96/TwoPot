@@ -23,6 +23,7 @@ import { useExpenses, AddExpenseSheet, ExpenseRow } from '@/features/expenses'
 import { useBudgetUsage } from '@/features/budgets'
 import { GoalCard, useGoals } from '@/features/goals'
 import { SettlementCard, useIsSettled, useSettlement } from '@/features/settlement'
+import { PotsOverview } from '@/features/pots'
 import { useCurrentUser } from '@/features/auth'
 import { SetupChecklist, type SetupStep } from '@/features/home/SetupChecklist'
 
@@ -197,6 +198,8 @@ export function HomePage() {
           isSettled={isSettled ?? false}
         />
       )}
+
+      {householdId && <PotsOverview householdId={householdId} month={month} />}
 
       {budgetAlerts.length > 0 && (
         <Stack spacing={1}>
