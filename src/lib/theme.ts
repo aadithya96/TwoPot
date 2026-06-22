@@ -91,6 +91,14 @@ export const theme = createTheme({
         root: { borderRadius: 8 },
       },
     },
+    MuiListItemIcon: {
+      // By default list icons render at action.active (~56% opacity), which is
+      // noticeably dimmer than the adjacent label text — especially in dark
+      // mode. Inherit the list item's text colour so icons and labels match.
+      styleOverrides: {
+        root: { color: 'inherit' },
+      },
+    },
   },
 })
 

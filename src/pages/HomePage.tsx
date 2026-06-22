@@ -266,9 +266,18 @@ export function HomePage() {
           </Link>
         </Stack>
         {isGoalsLoading ? (
-          <Stack direction="row" spacing={1} sx={{ mt: 1, overflowX: 'auto' }}>
+          <Stack
+            direction={{ xs: 'row', md: 'column' }}
+            spacing={1.5}
+            sx={{ mt: 1, overflowX: { xs: 'auto', md: 'visible' } }}
+          >
             {[0, 1].map((i) => (
-              <Skeleton key={i} variant="rounded" width={200} height={160} />
+              <Skeleton
+                key={i}
+                variant="rounded"
+                height={160}
+                sx={{ width: { xs: 200, md: '100%' }, flexShrink: 0 }}
+              />
             ))}
           </Stack>
         ) : !goals || goals.length === 0 ? (
@@ -276,9 +285,20 @@ export function HomePage() {
             No savings goals yet.
           </Typography>
         ) : (
-          <Stack direction="row" spacing={1.5} sx={{ mt: 1, overflowX: 'auto', pb: 1 }}>
+          <Stack
+            direction={{ xs: 'row', md: 'column' }}
+            spacing={1.5}
+            sx={{
+              mt: 1,
+              overflowX: { xs: 'auto', md: 'visible' },
+              pb: { xs: 1, md: 0 },
+            }}
+          >
             {goals.map((goal) => (
-              <Box key={goal.id} sx={{ minWidth: 220 }}>
+              <Box
+                key={goal.id}
+                sx={{ minWidth: { xs: 220, md: 0 }, width: { md: '100%' }, flexShrink: 0 }}
+              >
                 <GoalCard goal={goal} members={members} />
               </Box>
             ))}
