@@ -1,5 +1,8 @@
 FROM node:24-alpine AS build
 WORKDIR /app
+# Signal a non-interactive environment so pnpm doesn't prompt (no TTY in the
+# image build), e.g. before purging an out-of-sync node_modules directory.
+ENV CI=true
 RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
