@@ -84,10 +84,18 @@ export function CategoryManager({ householdId }: CategoryManagerProps) {
                 disableGutters
                 secondaryAction={
                   <Box>
-                    <IconButton aria-label={`Edit ${category.name}`} onClick={() => openEdit(category)}>
+                    <IconButton
+                      aria-label={`Edit ${category.name}`}
+                      onClick={() => openEdit(category)}
+                      sx={{ color: 'text.secondary' }}
+                    >
                       <EditOutlinedIcon fontSize="small" />
                     </IconButton>
-                    <IconButton aria-label={`Delete ${category.name}`} onClick={() => setPendingDelete(category)}>
+                    <IconButton
+                      aria-label={`Delete ${category.name}`}
+                      onClick={() => setPendingDelete(category)}
+                      sx={{ color: 'text.secondary' }}
+                    >
                       <DeleteOutlineIcon fontSize="small" />
                     </IconButton>
                   </Box>

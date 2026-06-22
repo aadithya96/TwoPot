@@ -116,6 +116,7 @@ export function MembersSection({ householdId }: MembersSectionProps) {
                         edge="end"
                         aria-label={`Remove ${profile.display_name}`}
                         onClick={() => setPending(member)}
+                        sx={{ color: 'text.secondary' }}
                       >
                         <PersonRemoveOutlinedIcon />
                       </IconButton>
