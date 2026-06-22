@@ -15,3 +15,7 @@ export type SavingsGoal = Database['public']['Tables']['savings_goals']['Row']
 export type GoalContribution = Database['public']['Tables']['goal_contributions']['Row']
 export type Settlement = Database['public']['Tables']['settlements']['Row']
 export type PushSubscriptionRow = Database['public']['Tables']['push_subscriptions']['Row']
+export type AuditLogEntry = Database['public']['Tables']['audit_log']['Row']
+export type AuditLogEntryWithActor = AuditLogEntry & {
+  actor: Pick<Profile, 'id' | 'display_name' | 'avatar_url'> | null
+}

@@ -18,12 +18,14 @@ import {
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined'
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined'
+import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined'
 import { Link as RouterLink } from 'react-router-dom'
 import { useCurrentUser, signOut } from '@/features/auth'
 import { useHouseholdStore } from '@/stores/householdStore'
 import { useDarkMode } from '@/hooks/useDarkMode'
 import { IncomeSplitSettings } from '@/features/splitting'
 import { CategoryManager } from '@/features/categories'
+import { MembersSection } from '@/features/household'
 
 /**
  * Settings screen: profile summary, dark-mode toggle, links to notification and household
@@ -87,8 +89,17 @@ export function SettingsPage() {
             </ListItemIcon>
             <ListItemText primary="Notifications" />
           </ListItem>
+          <Divider component="li" />
+          <ListItem component={RouterLink} to="/settings/activity">
+            <ListItemIcon>
+              <HistoryOutlinedIcon />
+            </ListItemIcon>
+            <ListItemText primary="Activity log" />
+          </ListItem>
         </List>
       </Card>
+
+      {householdId && <MembersSection householdId={householdId} />}
 
       <Card>
         <CardContent>

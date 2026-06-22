@@ -23,6 +23,7 @@ import { formatMonth, formatRelativeDate, monthKey, shiftMonth } from '@/lib/dat
 import { ExpenseRow } from './ExpenseRow'
 import { AddExpenseSheet } from './AddExpenseSheet'
 import { useExpenses } from './useExpenses'
+import { CategoryIcon } from '@/components/CategoryIcon'
 import type { Category } from '@/types/app'
 
 export interface ExpenseListProps {
@@ -138,7 +139,14 @@ export function ExpenseList({ householdId, currentUserId, categories }: ExpenseL
               <MenuItem value="all">All categories</MenuItem>
               {categories.map((category) => (
                 <MenuItem key={category.id} value={category.id}>
-                  {category.icon ? `${category.icon} ${category.name}` : category.name}
+                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                    <CategoryIcon
+                      icon={category.icon}
+                      fontSize="small"
+                      sx={{ color: category.color }}
+                    />
+                    <span>{category.name}</span>
+                  </Stack>
                 </MenuItem>
               ))}
             </TextField>

@@ -12,6 +12,7 @@ import {
 import { formatINR } from '@/lib/currency'
 import { formatRelativeDate } from '@/lib/dates'
 import { useBackButton } from '@/hooks/useBackButton'
+import { CategoryIcon } from '@/components/CategoryIcon'
 import { AddExpenseSheet } from './AddExpenseSheet'
 import { useDeleteExpense } from './useExpenses'
 import type { ExpenseFormValues } from './expenseSchema'
@@ -103,9 +104,14 @@ export function ExpenseDetailSheet({
           </Stack>
 
           {expense.category && (
-            <Typography variant="bodyMedium" sx={{ mt: 1 }}>
-              {expense.category.icon} {expense.category.name}
-            </Typography>
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mt: 1 }}>
+              <CategoryIcon
+                icon={expense.category.icon}
+                fontSize="small"
+                sx={{ color: expense.category.color }}
+              />
+              <Typography variant="bodyMedium">{expense.category.name}</Typography>
+            </Stack>
           )}
 
           {expense.notes && (
