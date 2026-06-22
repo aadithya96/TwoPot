@@ -1,10 +1,18 @@
+import { useState } from 'react'
 import {
   Avatar,
   Box,
+  Button,
   Card,
   CardContent,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  IconButton,
   List,
   ListItem,
   ListItemAvatar,
@@ -13,7 +21,10 @@ import {
   Typography,
 } from '@mui/material'
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined'
-import { useHouseholdMembers } from '@/features/auth'
+import PersonRemoveOutlinedIcon from '@mui/icons-material/PersonRemoveOutlined'
+import { useSnackbar } from 'notistack'
+import { useHouseholdMembers, useRemoveMember, useSession } from '@/features/auth'
+import type { HouseholdMemberWithProfile } from '@/features/auth'
 
 export interface MembersSectionProps {
   /** Household whose members are listed. */
@@ -33,6 +44,39 @@ function joinedLabel(isoDate: string): string {
 /** Settings card listing the people who have joined the household. */
 export function MembersSection({ householdId }: MembersSectionProps) {
   const { data: members, isLoading } = useHouseholdMembers(householdId)
+  const { data: session } = useSession()
+  const removeMember = useRemoveMember()
+  const { enqueueSnackbar } = useSnackbar()
+
+  const currentUserId = session?.user.id
+  const isOwner = (members ?? []).some(
+    (member) => member.profile.id === currentUserId && member.role === 'owner'
+  )
+
+  // The member pending removal (drives the confirmation dialog), or null.
+  const [pending, setPending] = useState<HouseholdMemberWithProfile | null>(null)
+
+  const handleRemove = async (keepExpenses: boolean) => {
+    if (!pending) return
+    try {
+      await removeMember.mutateAsync({
+        householdId,
+        memberId: pending.profile.id,
+        keepExpenses,
+      })
+      enqueueSnackbar(
+        keepExpenses
+          ? `Removed ${pending.profile.display_name}, kept their expenses`
+          : `Removed ${pending.profile.display_name} and their expenses`,
+        { variant: 'success' }
+      )
+      setPending(null)
+    } catch (error) {
+      enqueueSnackbar(error instanceof Error ? error.message : 'Could not remove member', {
+        variant: 'error',
+      })
+    }
+  }
 
   return (
     <Card>
@@ -53,22 +97,40 @@ export function MembersSection({ householdId }: MembersSectionProps) {
           <CircularProgress size={20} sx={{ mt: 1 }} />
         ) : members && members.length > 0 ? (
           <List disablePadding>
-            {members.map(({ profile, role, joined_at }) => (
-              <ListItem key={profile.id} disableGutters>
-                <ListItemAvatar>
-                  <Avatar src={profile.avatar_url ?? undefined}>{profile.display_name[0]}</Avatar>
-                </ListItemAvatar>
-                <ListItemText
-                  primary={
-                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                      <span>{profile.display_name}</span>
-                      {role === 'owner' && <Chip size="small" label="Owner" />}
-                    </Stack>
+            {members.map((member) => {
+              const { profile, role, joined_at } = member
+              const canRemove = isOwner && role !== 'owner' && profile.id !== currentUserId
+              return (
+                <ListItem
+                  key={profile.id}
+                  disableGutters
+                  secondaryAction={
+                    canRemove ? (
+                      <IconButton
+                        edge="end"
+                        aria-label={`Remove ${profile.display_name}`}
+                        onClick={() => setPending(member)}
+                      >
+                        <PersonRemoveOutlinedIcon />
+                      </IconButton>
+                    ) : undefined
                   }
-                  secondary={joinedLabel(joined_at)}
-                />
-              </ListItem>
-            ))}
+                >
+                  <ListItemAvatar>
+                    <Avatar src={profile.avatar_url ?? undefined}>{profile.display_name[0]}</Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={
+                      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                        <span>{profile.display_name}</span>
+                        {role === 'owner' && <Chip size="small" label="Owner" />}
+                      </Stack>
+                    }
+                    secondary={joinedLabel(joined_at)}
+                  />
+                </ListItem>
+              )
+            })}
           </List>
         ) : (
           <Box sx={{ mt: 1 }}>
@@ -78,6 +140,32 @@ export function MembersSection({ householdId }: MembersSectionProps) {
           </Box>
         )}
       </CardContent>
+
+      <Dialog open={pending !== null} onClose={() => !removeMember.isPending && setPending(null)}>
+        <DialogTitle>Remove {pending?.profile.display_name}?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Choose what happens to {pending?.profile.display_name}&apos;s expenses. You can keep them
+            in the household ledger, or remove everything they added. This can&apos;t be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ flexWrap: 'wrap', gap: 1, px: 3, pb: 2 }}>
+          <Button onClick={() => setPending(null)} disabled={removeMember.isPending}>
+            Cancel
+          </Button>
+          <Button onClick={() => void handleRemove(true)} disabled={removeMember.isPending}>
+            Keep expenses
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={() => void handleRemove(false)}
+            disabled={removeMember.isPending}
+          >
+            Remove everything
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   )
 }
