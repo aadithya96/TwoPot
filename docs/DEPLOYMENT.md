@@ -94,6 +94,36 @@ Manual apply (the CI does this for you):
 kubectl apply -f k8s/
 ```
 
+## Hostname & domain migration
+
+The app is served today at **`https://twopot.ad-labs.duckdns.org`** (set in
+`k8s/ingress.yaml`). DuckDNS auto-resolves any label under
+`ad-labs.duckdns.org` to the same IP as the parent, so the `twopot.` subdomain
+needs **no extra DNS record** — just make sure the host's public IP behind
+`ad-labs.duckdns.org` routes ports 80/443 to the cluster's Traefik. Let's
+Encrypt validates the cert over HTTP-01 against that name automatically.
+
+The ingress host is the single source of truth: the deploy workflow derives
+`VITE_APP_URL` from the first `host:` in `k8s/ingress.yaml`, so the frontend's
+app URL always matches whatever the ingress serves.
+
+### Later: switching to `ad-labs.com`
+
+When the `ad-labs.com` domain is purchased:
+
+1. Point `twopot.ad-labs.com` (A/AAAA record) at the same public IP, and wait
+   for it to resolve.
+2. In `k8s/ingress.yaml`, add `twopot.ad-labs.com` as the **first** entry under
+   both `tls.hosts` and `rules` (keep the duckdns host too if you want both to
+   keep working). Putting it first makes it canonical for `VITE_APP_URL`.
+3. Push to `main`. cert-manager reissues a SAN cert covering both names and the
+   image rebuilds with the new `VITE_APP_URL`.
+
+Do **not** add the `ad-labs.com` host before its DNS resolves — the ACME HTTP-01
+challenge for an unresolvable name fails and blocks cert issuance for the whole
+certificate. (That's exactly why the initial config was switched off the
+not-yet-owned `ad-labs.com` and onto the live duckdns host.)
+
 ## Secrets created automatically on the cluster
 
 The deploy job provisions these in the `twopot` namespace on every run
