@@ -22,4 +22,5 @@ export const queryKeys = {
   personContributions: (householdId: string, month: string) =>
     ['personContributions', householdId, month] as const,
   pushSubscription: (userId: string) => ['pushSubscription', userId] as const,
+  auditLog: (householdId: string) => ['auditLog', householdId] as const,
 }

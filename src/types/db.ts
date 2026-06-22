@@ -382,6 +382,47 @@ export interface Database {
           },
         ]
       }
+      audit_log: {
+        Row: {
+          id: string
+          household_id: string
+          actor_id: string | null
+          action: string
+          entity_type: string
+          entity_id: string | null
+          summary: string | null
+          metadata: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          household_id: string
+          actor_id?: string | null
+          action: string
+          entity_type: string
+          entity_id?: string | null
+          summary?: string | null
+          metadata?: Json
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['audit_log']['Insert']>
+        Relationships: [
+          {
+            foreignKeyName: 'audit_log_household_id_fkey'
+            columns: ['household_id']
+            isOneToOne: false
+            referencedRelation: 'households'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'audit_log_actor_id_fkey'
+            columns: ['actor_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
     }
     Views: {
       budget_usage: {

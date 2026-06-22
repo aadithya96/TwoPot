@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Box, LinearProgress, Stack, Typography } from '@mui/material'
 import { formatINR } from '@/lib/currency'
+import { CategoryIcon } from '@/components/CategoryIcon'
 import type { BudgetUsage, Category } from '@/types/app'
 import { SetBudgetDialog } from './SetBudgetDialog'
 
@@ -44,9 +45,11 @@ export function BudgetCategoryRow({ usage, householdId, categories }: BudgetCate
         <Stack spacing={0.75} sx={{ py: 1.5 }}>
           <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-              <Typography variant="bodyLarge" component="span">
-                {usage.category_icon}
-              </Typography>
+              <CategoryIcon
+                icon={usage.category_icon}
+                fontSize="small"
+                sx={{ color: usage.category_color }}
+              />
               <Typography variant="titleMedium" component="span">
                 {usage.category_name}
               </Typography>

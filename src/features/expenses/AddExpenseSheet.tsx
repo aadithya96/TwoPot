@@ -29,6 +29,7 @@ import { ReceiptUploader } from './ReceiptUploader'
 import { useBackButton } from '@/hooks/useBackButton'
 import { useVisualViewport } from '@/hooks/useVisualViewport'
 import { useHouseholdStore } from '@/stores/householdStore'
+import { useCurrentUser } from '@/features/auth'
 import { useIncomeSplit } from '@/features/splitting'
 import type { Category } from '@/types/app'
 
@@ -64,6 +65,7 @@ const DEFAULT_VALUES: ExpenseFormValues = {
 export function AddExpenseSheet({ open, onClose, categories, initialValues, expenseId }: AddExpenseSheetProps) {
   const householdId = useHouseholdStore((state) => state.householdId)
   const members = useHouseholdStore((state) => state.members)
+  const { data: currentUser } = useCurrentUser()
   const { height: viewportHeight } = useVisualViewport()
   const addExpense = useAddExpense()
   const updateExpense = useUpdateExpense()
@@ -81,6 +83,16 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
 
   const owner = watch('owner')
   const { data: incomeSplit } = useIncomeSplit(householdId ?? undefined)
+
+  // Default "who paid" to the current user for a new expense, so the form is
+  // submittable without an extra tap. `paidBy` is a required UUID, so leaving it
+  // blank silently blocks submission — this keeps the primary action working.
+  const currentUserId = currentUser?.id
+  useEffect(() => {
+    if (open && !expenseId && currentUserId && !getValues('paidBy')) {
+      setValue('paidBy', currentUserId)
+    }
+  }, [open, expenseId, currentUserId, getValues, setValue])
 
   // For a new expense, default the shared split to each partner's income ratio
   // when income-based splitting is enabled. Only applies while the split is
@@ -144,19 +156,34 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
     }
   }
 
-  const onSubmit = handleSubmit(async (values) => {
-    if (!householdId) return
-    const month = values.date.slice(0, 7)
+  const onSubmit = handleSubmit(
+    async (values) => {
+      if (!householdId) return
 
-    if (expenseId) {
-      await updateExpense.mutateAsync({ id: expenseId, householdId, ...values })
-    } else {
-      await addExpense.mutateAsync({ householdId, ...values })
+      try {
+        if (expenseId) {
+          await updateExpense.mutateAsync({ id: expenseId, householdId, ...values })
+        } else {
+          await addExpense.mutateAsync({ householdId, ...values })
+        }
+      } catch {
+        enqueueSnackbar('Could not save the expense — please try again', { variant: 'error' })
+        return
+      }
+
+      reset(DEFAULT_VALUES)
+      onClose()
+    },
+    // Surface validation failures so the primary button never appears to do
+    // nothing — react-hook-form blocks the submit callback on invalid input.
+    (errors) => {
+      const firstMessage = Object.values(errors).find((error) => error?.message)?.message
+      enqueueSnackbar(
+        typeof firstMessage === 'string' ? firstMessage : 'Please fill in the required fields',
+        { variant: 'warning' }
+      )
     }
-    void month
-    reset(DEFAULT_VALUES)
-    onClose()
-  })
+  )
 
   const isPending = addExpense.isPending || updateExpense.isPending
 
@@ -177,7 +204,24 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
         },
       }}
     >
-      <Box component="form" onSubmit={onSubmit} sx={{ p: 2, overflowY: 'auto' }}>
+      <Box
+        component="form"
+        onSubmit={onSubmit}
+        sx={{
+          p: 2,
+          overflowY: 'auto',
+          // Replace the chunky native desktop scrollbar with a slim, themed one
+          // so the sheet doesn't show an OS scrollbar when content overflows.
+          scrollbarWidth: 'thin',
+          scrollbarColor: (theme) => `${theme.palette.divider} transparent`,
+          '&::-webkit-scrollbar': { width: 6 },
+          '&::-webkit-scrollbar-track': { background: 'transparent' },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: 'divider',
+            borderRadius: 3,
+          },
+        }}
+      >
         <Typography variant="titleLarge" sx={{ mb: 2 }}>
           {expenseId ? 'Edit expense' : 'Add expense'}
         </Typography>
@@ -294,19 +338,26 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
             <Controller
               name="paidBy"
               control={control}
-              render={({ field }) => (
-                <Stack direction="row" spacing={1}>
-                  {members.map((member) => (
-                    <Chip
-                      key={member.id}
-                      avatar={<Avatar src={member.avatar_url ?? undefined}>{member.display_name[0]}</Avatar>}
-                      label={member.display_name}
-                      onClick={() => field.onChange(member.id)}
-                      variant={field.value === member.id ? 'filled' : 'outlined'}
-                      color={field.value === member.id ? 'primary' : 'default'}
-                    />
-                  ))}
-                </Stack>
+              render={({ field, fieldState }) => (
+                <>
+                  <Stack direction="row" spacing={1}>
+                    {members.map((member) => (
+                      <Chip
+                        key={member.id}
+                        avatar={<Avatar src={member.avatar_url ?? undefined}>{member.display_name[0]}</Avatar>}
+                        label={member.display_name}
+                        onClick={() => field.onChange(member.id)}
+                        variant={field.value === member.id ? 'filled' : 'outlined'}
+                        color={field.value === member.id ? 'primary' : 'default'}
+                      />
+                    ))}
+                  </Stack>
+                  {fieldState.error && (
+                    <Typography variant="bodySmall" color="error" sx={{ mt: 0.5, display: 'block' }}>
+                      Select who paid
+                    </Typography>
+                  )}
+                </>
               )}
             />
           </Box>

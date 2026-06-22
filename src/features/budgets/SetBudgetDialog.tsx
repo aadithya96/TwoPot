@@ -14,6 +14,7 @@ import {
   TextField,
 } from '@mui/material'
 import { fromStorageAmount, toStorageAmount } from '@/lib/currency'
+import { CategoryIcon } from '@/components/CategoryIcon'
 import type { Budget, BudgetUsage, Category } from '@/types/app'
 import { useSetBudget } from './useBudgets'
 
@@ -88,7 +89,14 @@ export function SetBudgetDialog({
             >
               {categories.map((category) => (
                 <MenuItem key={category.id} value={category.id}>
-                  {category.icon} {category.name}
+                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                    <CategoryIcon
+                      icon={category.icon}
+                      fontSize="small"
+                      sx={{ color: category.color }}
+                    />
+                    <span>{category.name}</span>
+                  </Stack>
                 </MenuItem>
               ))}
             </TextField>

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Box, Chip, Drawer, Typography } from '@mui/material'
 import type { Category } from '@/types/app'
 import { useBackButton } from '@/hooks/useBackButton'
+import { CategoryIcon } from '@/components/CategoryIcon'
 
 export interface CategoryPickerProps {
   /** Categories available for the current household. */
@@ -27,7 +28,8 @@ export function CategoryPicker({ categories, value, onChange }: CategoryPickerPr
   return (
     <>
       <Chip
-        label={selected ? `${selected.icon} ${selected.name}` : 'Select category'}
+        icon={selected ? <CategoryIcon icon={selected.icon} sx={{ color: `${selected.color} !important` }} /> : undefined}
+        label={selected ? selected.name : 'Select category'}
         onClick={() => setOpen(true)}
         sx={{
           alignSelf: 'flex-start',
@@ -47,17 +49,13 @@ export function CategoryPicker({ categories, value, onChange }: CategoryPickerPr
                 onClick={() => handleSelect(category.id)}
                 variant={category.id === value ? 'filled' : 'outlined'}
                 icon={
-                  <Box
-                    sx={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: '50%',
-                      backgroundColor: category.color,
-                      ml: 1,
-                    }}
+                  <CategoryIcon
+                    icon={category.icon}
+                    fontSize="small"
+                    sx={{ color: `${category.color} !important` }}
                   />
                 }
-                label={`${category.icon} ${category.name}`}
+                label={category.name}
               />
             ))}
           </Box>

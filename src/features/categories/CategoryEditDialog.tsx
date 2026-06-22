@@ -7,16 +7,19 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
   Stack,
   TextField,
   Typography,
 } from '@mui/material'
 import { useSnackbar } from 'notistack'
 import type { Category } from '@/types/app'
+import { CategoryIcon } from '@/components/CategoryIcon'
+import { CATEGORY_ICON_NAMES } from '@/components/categoryIcons'
 import { useCreateCategory, useUpdateCategory } from './useCategoryMutations'
 
-/** Suggested emoji icons offered as quick picks when editing a category. */
-const EMOJI_SUGGESTIONS = ['🍽️', '🛒', '🚗', '⚡', '❤️', '🎬', '🏠', '✈️', '🎁', '💊', '📱', '💸']
+/** Default icon name for a brand-new category. */
+const DEFAULT_ICON = 'CategoryOutlined'
 
 /** Preset colour swatches for categories. */
 const COLOR_SWATCHES = [
@@ -39,7 +42,7 @@ export function CategoryEditDialog({ open, onClose, householdId, category }: Cat
   const { enqueueSnackbar } = useSnackbar()
 
   const [name, setName] = useState(category?.name ?? '')
-  const [icon, setIcon] = useState(category?.icon ?? '🏷️')
+  const [icon, setIcon] = useState(category?.icon ?? DEFAULT_ICON)
   const [color, setColor] = useState(category?.color ?? COLOR_SWATCHES[0])
 
   // Re-seed the form when the dialog is (re)opened for a different category.
@@ -48,7 +51,7 @@ export function CategoryEditDialog({ open, onClose, householdId, category }: Cat
   if (open && currentId !== syncedId) {
     setSyncedId(currentId)
     setName(category?.name ?? '')
-    setIcon(category?.icon ?? '🏷️')
+    setIcon(category?.icon ?? DEFAULT_ICON)
     setColor(category?.color ?? COLOR_SWATCHES[0])
   }
 
@@ -57,7 +60,7 @@ export function CategoryEditDialog({ open, onClose, householdId, category }: Cat
 
   const handleSave = async () => {
     if (!trimmedName) return
-    const input = { householdId, name: trimmedName, icon: icon.trim() || '🏷️', color }
+    const input = { householdId, name: trimmedName, icon: icon || DEFAULT_ICON, color }
     try {
       if (category) {
         await updateCategory.mutateAsync({ id: category.id, ...input })
@@ -87,25 +90,27 @@ export function CategoryEditDialog({ open, onClose, householdId, category }: Cat
             <Typography variant="labelLarge" sx={{ mb: 1, display: 'block' }}>
               Icon
             </Typography>
-            <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-              <TextField
-                value={icon}
-                onChange={(event) => setIcon(event.target.value)}
-                sx={{ width: 72 }}
-                slotProps={{ htmlInput: { maxLength: 4, style: { textAlign: 'center', fontSize: '1.5rem' } } }}
-              />
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                {EMOJI_SUGGESTIONS.map((emoji) => (
-                  <Button
-                    key={emoji}
-                    onClick={() => setIcon(emoji)}
-                    sx={{ minWidth: 36, p: 0.5, fontSize: '1.25rem' }}
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+              {CATEGORY_ICON_NAMES.map((iconName) => {
+                const isSelected = iconName === icon
+                return (
+                  <IconButton
+                    key={iconName}
+                    aria-label={iconName}
+                    onClick={() => setIcon(iconName)}
+                    sx={{
+                      border: '1px solid',
+                      borderColor: isSelected ? color : 'divider',
+                      bgcolor: isSelected ? color : 'transparent',
+                      color: isSelected ? '#fff' : 'text.secondary',
+                      '&:hover': { bgcolor: isSelected ? color : 'action.hover' },
+                    }}
                   >
-                    {emoji}
-                  </Button>
-                ))}
-              </Box>
-            </Stack>
+                    <CategoryIcon icon={iconName} fontSize="small" />
+                  </IconButton>
+                )
+              })}
+            </Box>
           </Box>
 
           <Box>

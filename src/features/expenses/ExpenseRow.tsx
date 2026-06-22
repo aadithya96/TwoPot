@@ -86,7 +86,6 @@ export function ExpenseRow({ expense, currentUserId, householdId, month, categor
         />
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography variant="bodyLarge" noWrap>
-            {expense.category ? `${expense.category.icon} ` : ''}
             {expense.description}
           </Typography>
           <Typography variant="bodySmall" color="text.secondary">

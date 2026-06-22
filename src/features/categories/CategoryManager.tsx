@@ -21,6 +21,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined'
 import { useSnackbar } from 'notistack'
 import { useCategories } from '@/hooks/useCategories'
+import { CategoryIcon } from '@/components/CategoryIcon'
 import type { Category } from '@/types/app'
 import { CategoryEditDialog } from './CategoryEditDialog'
 import { useDeleteCategory } from './useCategoryMutations'
@@ -93,7 +94,9 @@ export function CategoryManager({ householdId }: CategoryManagerProps) {
                 }
               >
                 <ListItemAvatar>
-                  <Avatar sx={{ bgcolor: category.color }}>{category.icon}</Avatar>
+                  <Avatar sx={{ bgcolor: category.color }}>
+                    <CategoryIcon icon={category.icon} sx={{ color: '#fff' }} />
+                  </Avatar>
                 </ListItemAvatar>
                 <ListItemText primary={category.name} />
               </ListItem>
