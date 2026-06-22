@@ -11,7 +11,10 @@ export function ThemedApp() {
   const darkMode = useUiStore((state) => state.darkMode)
   return (
     <ThemeProvider theme={darkMode ? darkTheme : theme}>
-      <CssBaseline />
+      {/* enableColorScheme sets the document `color-scheme` from the active
+          palette mode so native controls (buttons, inputs, scrollbars) use
+          dark-appropriate defaults instead of black-on-dark text. */}
+      <CssBaseline enableColorScheme />
       <SnackbarProvider maxSnack={3} autoHideDuration={4000}>
         <RouterProvider router={router} />
       </SnackbarProvider>

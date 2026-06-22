@@ -1,7 +1,8 @@
-import { Box, Skeleton, Stack, Typography } from '@mui/material'
+import { Box, Skeleton, Stack, Typography, useTheme } from '@mui/material'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { useInView } from '@/hooks/useInView'
 import { formatINR } from '@/lib/currency'
+import { tooltipStyles } from './chartTheme'
 import type { MonthlyByCategoryRow } from './useInsights'
 
 export interface SpendByCategoryProps {
@@ -15,6 +16,7 @@ export interface SpendByCategoryProps {
  */
 export function SpendByCategory({ data }: SpendByCategoryProps) {
   const { ref, inView } = useInView({ threshold: 0.1 })
+  const theme = useTheme()
   const total = data.reduce((sum, row) => sum + row.total_amount, 0)
 
   return (
@@ -46,6 +48,7 @@ export function SpendByCategory({ data }: SpendByCategoryProps) {
               </Pie>
               <Tooltip
                 formatter={(value) => formatINR(typeof value === 'number' ? value : 0)}
+                {...tooltipStyles(theme)}
               />
             </PieChart>
           </ResponsiveContainer>

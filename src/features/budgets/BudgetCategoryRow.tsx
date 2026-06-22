@@ -37,6 +37,9 @@ export function BudgetCategoryRow({ usage, householdId, categories }: BudgetCate
           textAlign: 'left',
           border: 'none',
           background: 'none',
+          // Inherit the theme text colour instead of the UA default button
+          // colour so the label stays legible in dark mode.
+          color: 'inherit',
           p: 0,
           cursor: 'pointer',
         }}
