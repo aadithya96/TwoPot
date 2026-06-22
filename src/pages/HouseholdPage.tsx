@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Alert,
   Box,
@@ -6,13 +6,21 @@ import {
   Card,
   CardContent,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   IconButton,
   Stack,
   Typography,
 } from '@mui/material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined'
+import { useNavigate } from 'react-router-dom'
 import { useSnackbar } from 'notistack'
-import { useHousehold, useGenerateInvite } from '@/features/auth/useHousehold'
+import { useHousehold, useGenerateInvite, useLeaveHousehold } from '@/features/auth/useHousehold'
+import { SETUP_DISMISSED_KEY } from '@/lib/storageKeys'
 
 /** Settings sub-page for managing the household: shows members and the partner invite code. */
 export function HouseholdPage() {
@@ -21,11 +29,31 @@ export function HouseholdPage() {
   // The mutation result is the source of truth for a freshly generated code, so
   // there's no local state to keep in sync.
   const { mutate: runGenerate, isPending, data: generatedCode } = generateInvite
+  const leaveHousehold = useLeaveHousehold()
+  const navigate = useNavigate()
   const { enqueueSnackbar } = useSnackbar()
+
+  const [confirmLeave, setConfirmLeave] = useState(false)
 
   const household = data?.household
   const members = data?.members ?? []
   const hasPartner = members.length >= 2
+
+  const handleLeave = async () => {
+    if (!household) return
+    try {
+      await leaveHousehold.mutateAsync(household.id)
+      // Re-surface the home "Get started" checklist for the next household.
+      localStorage.removeItem(SETUP_DISMISSED_KEY)
+      setConfirmLeave(false)
+      enqueueSnackbar('You left the household', { variant: 'success' })
+      navigate('/onboarding', { replace: true })
+    } catch (error) {
+      enqueueSnackbar(error instanceof Error ? error.message : 'Could not leave household', {
+        variant: 'error',
+      })
+    }
+  }
 
   // A freshly generated code takes precedence over the stored one.
   const code = generatedCode ?? household?.invite_code ?? null
@@ -115,8 +143,51 @@ export function HouseholdPage() {
               )}
             </CardContent>
           </Card>
+
+          <Card>
+            <CardContent>
+              <Typography variant="titleMedium" sx={{ mb: 1 }}>
+                Leave household
+              </Typography>
+              <Typography variant="bodyMedium" color="text.secondary" sx={{ mb: 1.5 }}>
+                Exit this household to create or join a different one with an invite code.
+              </Typography>
+              <Button
+                variant="outlined"
+                color="error"
+                startIcon={<LogoutOutlinedIcon />}
+                onClick={() => setConfirmLeave(true)}
+              >
+                Leave household
+              </Button>
+            </CardContent>
+          </Card>
         </>
       )}
+
+      <Dialog open={confirmLeave} onClose={() => !leaveHousehold.isPending && setConfirmLeave(false)}>
+        <DialogTitle>Leave this household?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {hasPartner
+              ? 'You will be removed from this household and your partner will keep it. Your expenses stay in the shared ledger. You can then create or join another household.'
+              : "You're the only member, so this household and all its data will be deleted. You can then create or join another household."}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setConfirmLeave(false)} disabled={leaveHousehold.isPending}>
+            Cancel
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={() => void handleLeave()}
+            disabled={leaveHousehold.isPending}
+          >
+            {leaveHousehold.isPending ? <CircularProgress size={20} color="inherit" /> : 'Leave'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

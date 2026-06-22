@@ -478,6 +478,10 @@ export interface Database {
         Args: { p_household_id: string; p_member_id: string; p_keep_expenses: boolean }
         Returns: void
       }
+      leave_household: {
+        Args: { p_household_id: string }
+        Returns: void
+      }
       increment_goal_amount: {
         Args: { goal_id: string; delta: number }
         Returns: void

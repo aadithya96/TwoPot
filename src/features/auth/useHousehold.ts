@@ -122,6 +122,31 @@ export function useJoinHousehold() {
   })
 }
 
+/**
+ * Removes the current user from their household so they can create or join a
+ * different one. If they were the last member the household is deleted; if they
+ * were the owner of a shared household, ownership passes to the remaining
+ * member. Clears the cached household so the app routes back to onboarding.
+ */
+export function useLeaveHousehold() {
+  const { data: session } = useSession()
+  const queryClient = useQueryClient()
+  const clearHousehold = useHouseholdStore((state) => state.clear)
+  const userId = session?.user.id
+
+  return useMutation({
+    mutationFn: async (householdId: string): Promise<void> => {
+      const { error } = await supabase.rpc('leave_household', { p_household_id: householdId })
+      if (error) throw error
+    },
+    onSuccess: (_data, householdId) => {
+      clearHousehold()
+      void queryClient.invalidateQueries({ queryKey: queryKeys.household(userId ?? 'anonymous') })
+      void queryClient.invalidateQueries({ queryKey: ['householdMembers', householdId] })
+    },
+  })
+}
+
 /** Generates (or regenerates) a 48h invite code for the current household. */
 export function useGenerateInvite() {
   return useMutation({
