@@ -97,10 +97,12 @@ export function ExpenseDetailSheet({
           </Typography>
 
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mt: 2 }}>
-            <Avatar src={expense.payer.avatar_url ?? undefined} sx={{ width: 24, height: 24 }}>
-              {expense.payer.display_name[0]}
+            <Avatar src={expense.payer?.avatar_url ?? undefined} sx={{ width: 24, height: 24 }}>
+              {expense.payer?.display_name?.[0] ?? '?'}
             </Avatar>
-            <Typography variant="bodyMedium">Paid by {expense.payer.display_name}</Typography>
+            <Typography variant="bodyMedium">
+              Paid by {expense.payer?.display_name ?? 'Unknown'}
+            </Typography>
           </Stack>
 
           {expense.category && (

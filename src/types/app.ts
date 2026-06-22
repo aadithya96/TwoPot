@@ -7,7 +7,8 @@ export type Category = Database['public']['Tables']['categories']['Row']
 export type Expense = Database['public']['Tables']['expenses']['Row']
 export type ExpenseWithRelations = Expense & {
   category: Category | null
-  payer: Profile
+  // Null when the paying profile can no longer be read (e.g. a former member).
+  payer: Profile | null
 }
 export type Budget = Database['public']['Tables']['budgets']['Row']
 export type BudgetUsage = Database['public']['Views']['budget_usage']['Row']
