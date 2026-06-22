@@ -23,6 +23,7 @@ import { useCurrentUser, signOut } from '@/features/auth'
 import { useHouseholdStore } from '@/stores/householdStore'
 import { useDarkMode } from '@/hooks/useDarkMode'
 import { IncomeSplitSettings } from '@/features/splitting'
+import { PotSettings } from '@/features/pots'
 import { CategoryManager } from '@/features/categories'
 
 /**
@@ -106,6 +107,8 @@ export function SettingsPage() {
       </Card>
 
       {householdId && <IncomeSplitSettings householdId={householdId} />}
+
+      {householdId && <PotSettings householdId={householdId} />}
 
       {householdId && <CategoryManager householdId={householdId} />}
 

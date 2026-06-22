@@ -42,6 +42,9 @@ export interface Database {
           invite_code: string | null
           invite_expires_at: string | null
           income_split_enabled: boolean
+          pot_enabled: boolean
+          pot_allocation_rule: 'equal' | 'proportional' | 'custom'
+          shared_pot_target: number | null
           created_at: string
         }
         Insert: {
@@ -50,6 +53,9 @@ export interface Database {
           invite_code?: string | null
           invite_expires_at?: string | null
           income_split_enabled?: boolean
+          pot_enabled?: boolean
+          pot_allocation_rule?: 'equal' | 'proportional' | 'custom'
+          shared_pot_target?: number | null
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['households']['Insert']>
@@ -61,6 +67,7 @@ export interface Database {
           user_id: string
           role: string
           income: number | null
+          pot_contribution: number | null
           joined_at: string
         }
         Insert: {
@@ -68,6 +75,7 @@ export interface Database {
           user_id: string
           role?: string
           income?: number | null
+          pot_contribution?: number | null
           joined_at?: string
         }
         Update: Partial<Database['public']['Tables']['household_members']['Insert']>

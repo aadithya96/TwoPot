@@ -4,6 +4,7 @@ export const queryKeys = {
   profile: (userId: string) => ['profile', userId] as const,
   household: (userId: string) => ['household', userId] as const,
   incomeSplit: (householdId: string) => ['incomeSplit', householdId] as const,
+  potConfig: (householdId: string) => ['potConfig', householdId] as const,
   categories: (householdId: string) => ['categories', householdId] as const,
   expenses: (householdId: string, month: string) => ['expenses', householdId, month] as const,
   expense: (expenseId: string) => ['expense', expenseId] as const,

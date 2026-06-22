@@ -33,8 +33,8 @@ below._
 ## 🍯 Signature two-person features
 
 - [x] Income-based fair splitting
-- [ ] "Two pots" income model — track income into a shared pot + two personal
-      pots, with auto-allocation rules
+- [x] "Two pots" income model — track income into a shared pot + two personal
+      pots, with auto-allocation rules (`migration 014_two_pots`)
 - [ ] Partner balance over time — running "who owes whom" trend, not just the
       current month's settlement
 - [ ] Partner activity feed — "Aadi added ₹500 groceries" (realtime + push)
