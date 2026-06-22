@@ -1,4 +1,4 @@
--- 014_two_pots.sql
+-- 015_two_pots.sql
 -- "Two pots" income model: a couple funds a shared pot for joint expenses while
 -- keeping the remainder of their income in personal pots. An allocation rule
 -- decides how the shared-pot target is funded by each partner:
