@@ -25,6 +25,7 @@ import PersonRemoveOutlinedIcon from '@mui/icons-material/PersonRemoveOutlined'
 import { useSnackbar } from 'notistack'
 import { useHouseholdMembers, useRemoveMember, useSession } from '@/features/auth'
 import type { HouseholdMemberWithProfile } from '@/features/auth'
+import { SETUP_DISMISSED_KEY } from '@/lib/storageKeys'
 
 export interface MembersSectionProps {
   /** Household whose members are listed. */
@@ -64,6 +65,10 @@ export function MembersSection({ householdId }: MembersSectionProps) {
         memberId: pending.profile.id,
         keepExpenses,
       })
+      // The household is back to a single member, so re-surface the home
+      // "Get started" checklist (its "Invite your partner" step is now undone)
+      // even if the owner had previously dismissed it.
+      localStorage.removeItem(SETUP_DISMISSED_KEY)
       enqueueSnackbar(
         keepExpenses
           ? `Removed ${pending.profile.display_name}, kept their expenses`
