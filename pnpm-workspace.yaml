@@ -1,0 +1,6 @@
+# msw's postinstall only copies the mock service worker when this project sets
+# msw.workerDirectory in package.json, which it does not, so the script is a
+# no-op here. Mark it as not built (acknowledged) so `pnpm install
+# --frozen-lockfile` doesn't fail with ERR_PNPM_IGNORED_BUILDS in CI/Docker.
+allowBuilds:
+  msw: false
