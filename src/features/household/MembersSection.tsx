@@ -26,6 +26,7 @@ import { useSnackbar } from 'notistack'
 import { useHouseholdMembers, useRemoveMember, useSession } from '@/features/auth'
 import type { HouseholdMemberWithProfile } from '@/features/auth'
 import { SETUP_DISMISSED_KEY } from '@/lib/storageKeys'
+import { errorMessage } from '@/lib/errors'
 
 export interface MembersSectionProps {
   /** Household whose members are listed. */
@@ -77,7 +78,7 @@ export function MembersSection({ householdId }: MembersSectionProps) {
       )
       setPending(null)
     } catch (error) {
-      enqueueSnackbar(error instanceof Error ? error.message : 'Could not remove member', {
+      enqueueSnackbar(errorMessage(error, 'Could not remove member'), {
         variant: 'error',
       })
     }

@@ -23,6 +23,7 @@ import VpnKeyIcon from '@mui/icons-material/VpnKey'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { queryKeys } from '@/lib/queryKeys'
+import { errorMessage } from '@/lib/errors'
 import { useCurrentUser, useSession } from './useAuth'
 import { useCreateHousehold, useJoinHousehold } from './useHousehold'
 
@@ -71,7 +72,7 @@ export function OnboardingFlow() {
         setActiveStep(steps.length - 1)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      setError(errorMessage(err, 'Something went wrong'))
     }
   }
 
