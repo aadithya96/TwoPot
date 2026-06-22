@@ -35,9 +35,10 @@ below._
 - [x] Income-based fair splitting
 - [x] "Two pots" income model — track income into a shared pot + two personal
       pots, with auto-allocation rules (`migration 015_two_pots`)
-- [ ] Partner balance over time — running "who owes whom" trend, not just the
-      current month's settlement
-- [ ] Partner activity feed — "Aadi added ₹500 groceries" (realtime + push)
+- [x] Partner balance over time — running "who owes whom" trend chart on
+      Insights (`migration 020_balance_trend`, `BalanceTrend.tsx`)
+- [x] Partner activity feed — "Aadi added ₹500 groceries" feed on Home
+      (realtime `audit_log` subscription) + push on large shared expenses
 - [ ] UPI settle-up deep links + settlement reminders
 
 ## 🤖 Smart input (reuses Anthropic edge-function infra)

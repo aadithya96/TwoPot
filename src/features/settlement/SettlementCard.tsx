@@ -14,8 +14,10 @@ import {
 } from '@mui/material'
 import CheckCircle from '@mui/icons-material/CheckCircle'
 import ArrowForward from '@mui/icons-material/ArrowForward'
+import QrCodeOutlinedIcon from '@mui/icons-material/QrCodeOutlined'
 import { formatINR } from '@/lib/currency'
 import { formatMonth } from '@/lib/dates'
+import { buildUpiPayLink } from '@/lib/upi'
 import type { Profile } from '@/types/app'
 import { useMarkSettled, type SettlementResult } from './useSettlement'
 
@@ -30,10 +32,19 @@ export interface SettlementCardProps {
   periodMonth: string
   /** Whether this period has already been marked settled (e.g. from settlement history). */
   isSettled: boolean
+  /** The signed-in user's id, used to show the "Pay via UPI" action only to the debtor. */
+  currentUserId?: string
 }
 
 /** Card showing who owes whom for a month, with a confirmation flow to mark it settled. */
-export function SettlementCard({ settlement, members, householdId, periodMonth, isSettled }: SettlementCardProps) {
+export function SettlementCard({
+  settlement,
+  members,
+  householdId,
+  periodMonth,
+  isSettled,
+  currentUserId,
+}: SettlementCardProps) {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const markSettled = useMarkSettled()
   const monthLabel = formatMonth(periodMonth)
@@ -56,6 +67,17 @@ export function SettlementCard({ settlement, members, householdId, periodMonth, 
   const ownerOf = (userId: string) => members.find((member) => member.id === userId)
   const debtor = ownerOf(settlement.owedBy)
   const creditor = ownerOf(settlement.owedTo)
+
+  const isDebtor = currentUserId === settlement.owedBy
+  const upiLink =
+    isDebtor && creditor?.upi_vpa
+      ? buildUpiPayLink({
+          vpa: creditor.upi_vpa,
+          payeeName: creditor.display_name,
+          amount: settlement.amount,
+          note: `TwoPot settlement ${monthLabel}`,
+        })
+      : null
 
   const handleConfirm = async () => {
     await markSettled.mutateAsync({
@@ -89,6 +111,17 @@ export function SettlementCard({ settlement, members, householdId, periodMonth, 
               {debtor?.display_name ?? 'Unknown'} owes {creditor?.display_name ?? 'Unknown'}{' '}
               <strong>{formatINR(settlement.amount)}</strong> for {monthLabel}
             </Typography>
+
+            {upiLink && (
+              <Button
+                variant="outlined"
+                startIcon={<QrCodeOutlinedIcon />}
+                component="a"
+                href={upiLink}
+              >
+                Pay via UPI
+              </Button>
+            )}
 
             <Button variant="contained" onClick={() => setConfirmOpen(true)}>
               Mark as Settled

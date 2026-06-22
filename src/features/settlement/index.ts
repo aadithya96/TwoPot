@@ -1,3 +1,5 @@
 export * from './useSettlement'
 export * from './SettlementCard'
 export * from './SettlementHistory'
+export * from './BalanceTrend'
+export * from './UpiSettings'

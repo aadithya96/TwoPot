@@ -27,6 +27,7 @@ import { IncomeSplitSettings } from '@/features/splitting'
 import { PotSettings } from '@/features/pots'
 import { CategoryManager } from '@/features/categories'
 import { MembersSection } from '@/features/household'
+import { UpiSettings } from '@/features/settlement'
 
 /**
  * Settings screen: profile summary, dark-mode toggle, links to notification and household
@@ -116,6 +117,8 @@ export function SettingsPage() {
           </MuiLink>
         </CardContent>
       </Card>
+
+      {currentUser && <UpiSettings userId={currentUser.id} upiVpa={currentUser.upi_vpa} />}
 
       {householdId && <IncomeSplitSettings householdId={householdId} />}
 

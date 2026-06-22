@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
@@ -48,6 +48,21 @@ export function useCurrentUser(): UseQueryResult<Profile | null> {
       return data
     },
     enabled: Boolean(userId),
+  })
+}
+
+/** Updates the current user's UPI VPA (e.g. "name@bank"), used for one-tap settle-up links. */
+export function useUpdateUpiVpa() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ userId, upiVpa }: { userId: string; upiVpa: string | null }) => {
+      const { error } = await supabase.from('profiles').update({ upi_vpa: upiVpa }).eq('id', userId)
+      if (error) throw error
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.profile(variables.userId) })
+    },
   })
 }
 

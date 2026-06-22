@@ -11,33 +11,7 @@ import {
 } from '@mui/material'
 import { useHouseholdStore } from '@/stores/householdStore'
 import { useAuditLog } from './useAuditLog'
-import type { AuditLogEntryWithActor } from '@/types/app'
-
-/** Friendly singular noun for each audited table. */
-const ENTITY_LABELS: Record<string, string> = {
-  expenses: 'expense',
-  categories: 'category',
-  budgets: 'budget',
-  savings_goals: 'goal',
-  settlements: 'settlement',
-  household_members: 'member',
-}
-
-/** Past-tense verb for each recorded action. */
-const ACTION_VERBS: Record<string, string> = {
-  created: 'added',
-  updated: 'updated',
-  deleted: 'removed',
-}
-
-/** Builds a one-line description like: Added expense "Lunch". */
-function describe(entry: AuditLogEntryWithActor): string {
-  const verb = ACTION_VERBS[entry.action] ?? entry.action
-  const noun = ENTITY_LABELS[entry.entity_type] ?? entry.entity_type
-  const label = entry.summary ? ` "${entry.summary}"` : ''
-  const capitalised = verb.charAt(0).toUpperCase() + verb.slice(1)
-  return `${capitalised} ${noun}${label}`
-}
+import { describeAuditEntry } from './activityFeed'
 
 /** Formats a timestamp as an absolute, locale-aware date + time. */
 function formatTimestamp(iso: string): string {
@@ -90,7 +64,7 @@ export function AuditLogPage() {
                   </Avatar>
                 </ListItemAvatar>
                 <ListItemText
-                  primary={describe(entry)}
+                  primary={describeAuditEntry(entry)}
                   secondary={`${entry.actor?.display_name ?? 'Someone'} · ${formatTimestamp(entry.created_at)}`}
                 />
               </ListItem>

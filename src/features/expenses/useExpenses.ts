@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient, type UseQueryResult } from '@tan
 import { supabase } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
 import { monthRange } from '@/lib/dates'
+import { notifyPartnerOfExpense } from '@/features/notifications/notifyPartner'
 import type { ExpenseWithRelations } from '@/types/app'
 
 const EXPENSE_SELECT = '*, category:categories(*), payer:profiles!paid_by(id, display_name, avatar_url)'
@@ -79,6 +80,12 @@ export function useAddExpense() {
       const month = variables.date.slice(0, 7)
       void queryClient.invalidateQueries({ queryKey: queryKeys.expenses(variables.householdId, month) })
       void queryClient.invalidateQueries({ queryKey: queryKeys.budgetUsage(variables.householdId) })
+      void notifyPartnerOfExpense({
+        payerId: variables.paidBy,
+        amount: variables.amount,
+        description: variables.description,
+        owner: variables.owner,
+      })
     },
   })
 }
