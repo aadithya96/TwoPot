@@ -3,6 +3,7 @@ import { Box, Button, Card, CardContent, Chip, LinearProgress, Stack, Typography
 import CheckCircle from '@mui/icons-material/CheckCircle'
 import { formatINR } from '@/lib/currency'
 import type { Profile, SavingsGoal } from '@/types/app'
+import { GoalIcon } from './GoalIcon'
 import { useGoalContributions } from './useGoals'
 import { computeAverageDailyRate, estimateProjectedCompletion } from './projection'
 import { ContributeDialog } from './ContributeDialog'
@@ -36,9 +37,7 @@ export function GoalCard({ goal, members }: GoalCardProps) {
         <CardContent>
           <Stack spacing={1.5}>
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-              <Typography variant="bodyLarge" component="span">
-                {goal.icon}
-              </Typography>
+              <GoalIcon icon={goal.icon} sx={{ color: goal.color }} />
               <Typography variant="titleMedium" component="span" sx={{ flex: 1 }}>
                 {goal.name}
               </Typography>

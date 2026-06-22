@@ -13,28 +13,10 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import Flight from '@mui/icons-material/Flight'
-import Home from '@mui/icons-material/Home'
-import DirectionsCar from '@mui/icons-material/DirectionsCar'
-import School from '@mui/icons-material/School'
-import Favorite from '@mui/icons-material/Favorite'
-import BeachAccess from '@mui/icons-material/BeachAccess'
-import Savings from '@mui/icons-material/Savings'
-import Celebration from '@mui/icons-material/Celebration'
 import { toStorageAmount } from '@/lib/currency'
+import { GoalIcon } from './GoalIcon'
+import { GOAL_ICON_KEYS } from './goalIcons'
 import { useCreateGoal } from './useGoals'
-
-/** Preset icon choices for a savings goal, keyed by the string stored on the `savings_goals` row. */
-const ICON_OPTIONS: { key: string; Icon: typeof Flight }[] = [
-  { key: 'flight', Icon: Flight },
-  { key: 'home', Icon: Home },
-  { key: 'car', Icon: DirectionsCar },
-  { key: 'school', Icon: School },
-  { key: 'favorite', Icon: Favorite },
-  { key: 'beach', Icon: BeachAccess },
-  { key: 'savings', Icon: Savings },
-  { key: 'celebration', Icon: Celebration },
-]
 
 /** Preset color swatches for a savings goal's top strip. */
 const COLOR_OPTIONS = [
@@ -62,7 +44,7 @@ export function CreateGoalDialog({ open, onClose, householdId }: CreateGoalDialo
   const [name, setName] = useState('')
   const [amountDisplay, setAmountDisplay] = useState('')
   const [deadline, setDeadline] = useState('')
-  const [icon, setIcon] = useState(ICON_OPTIONS[0].key)
+  const [icon, setIcon] = useState(GOAL_ICON_KEYS[0])
   const [color, setColor] = useState(COLOR_OPTIONS[0])
   const [wasOpen, setWasOpen] = useState(open)
   const createGoal = useCreateGoal()
@@ -74,7 +56,7 @@ export function CreateGoalDialog({ open, onClose, householdId }: CreateGoalDialo
     setName('')
     setAmountDisplay('')
     setDeadline('')
-    setIcon(ICON_OPTIONS[0].key)
+    setIcon(GOAL_ICON_KEYS[0])
     setColor(COLOR_OPTIONS[0])
   } else if (!open && wasOpen) {
     setWasOpen(false)
@@ -129,7 +111,7 @@ export function CreateGoalDialog({ open, onClose, householdId }: CreateGoalDialo
               Icon
             </Typography>
             <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-              {ICON_OPTIONS.map(({ key, Icon }) => (
+              {GOAL_ICON_KEYS.map((key) => (
                 <IconButton
                   key={key}
                   onClick={() => setIcon(key)}
@@ -140,7 +122,7 @@ export function CreateGoalDialog({ open, onClose, householdId }: CreateGoalDialo
                   }}
                   aria-label={key}
                 >
-                  <Icon />
+                  <GoalIcon icon={key} />
                 </IconButton>
               ))}
             </Stack>
