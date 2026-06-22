@@ -100,10 +100,10 @@ export function ExpenseRow({ expense, currentUserId, householdId, month, categor
           {formatINR(expense.amount)}
         </Typography>
         <Avatar
-          src={expense.payer.avatar_url ?? undefined}
+          src={expense.payer?.avatar_url ?? undefined}
           sx={{ width: 28, height: 28, flexShrink: 0 }}
         >
-          {expense.payer.display_name[0]}
+          {expense.payer?.display_name?.[0] ?? '?'}
         </Avatar>
       </Box>
 
