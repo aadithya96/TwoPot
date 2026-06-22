@@ -1,6 +1,7 @@
 import { Box, Typography, useTheme } from '@mui/material'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Legend } from 'recharts'
 import { formatINR } from '@/lib/currency'
+import { axisTickStyle, chartLineColor, legendWrapperStyle, tooltipStyles } from './chartTheme'
 import type { Profile } from '@/types/app'
 import type { PersonContributionRow } from './useInsights'
 
@@ -52,14 +53,20 @@ export function PersonContributions({ data, members }: PersonContributionsProps)
       ) : (
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="month" tickFormatter={shortMonthLabel} />
-            <YAxis width={48} />
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartLineColor(theme)} />
+            <XAxis
+              dataKey="month"
+              tickFormatter={shortMonthLabel}
+              tick={axisTickStyle(theme)}
+              stroke={chartLineColor(theme)}
+            />
+            <YAxis width={48} tick={axisTickStyle(theme)} stroke={chartLineColor(theme)} />
             <Tooltip
               formatter={(value) => formatINR(typeof value === 'number' ? value : 0)}
               labelFormatter={(label) => shortMonthLabel(String(label))}
+              {...tooltipStyles(theme)}
             />
-            <Legend />
+            <Legend wrapperStyle={legendWrapperStyle(theme)} />
             {members.map((member, index) => (
               <Bar
                 key={member.id}

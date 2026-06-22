@@ -2,6 +2,7 @@ import { Box, Skeleton, Typography, useTheme } from '@mui/material'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts'
 import { useInView } from '@/hooks/useInView'
 import { formatINR } from '@/lib/currency'
+import { axisTickStyle, chartLineColor, tooltipStyles } from './chartTheme'
 import type { MonthlyTrendRow } from './useInsights'
 
 const MONTH_LABEL_FORMATTER = new Intl.DateTimeFormat('en-IN', { month: 'short' })
@@ -41,12 +42,23 @@ export function MonthlyTrend({ data }: MonthlyTrendProps) {
       ) : (
         <ResponsiveContainer width="100%" height={240}>
           <AreaChart data={last6} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="month" tickFormatter={shortMonthLabel} />
-            <YAxis tickFormatter={formatThousands} width={48} />
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartLineColor(theme)} />
+            <XAxis
+              dataKey="month"
+              tickFormatter={shortMonthLabel}
+              tick={axisTickStyle(theme)}
+              stroke={chartLineColor(theme)}
+            />
+            <YAxis
+              tickFormatter={formatThousands}
+              width={48}
+              tick={axisTickStyle(theme)}
+              stroke={chartLineColor(theme)}
+            />
             <Tooltip
               formatter={(value) => formatINR(typeof value === 'number' ? value : 0)}
               labelFormatter={(label) => shortMonthLabel(String(label))}
+              {...tooltipStyles(theme)}
             />
             <Area
               type="monotone"
