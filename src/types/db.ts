@@ -14,6 +14,7 @@ export interface Database {
           avatar_url: string | null
           notification_prefs: Json
           dark_mode: boolean
+          upi_vpa: string | null
           created_at: string
         }
         Insert: {
@@ -22,6 +23,7 @@ export interface Database {
           avatar_url?: string | null
           notification_prefs?: Json
           dark_mode?: boolean
+          upi_vpa?: string | null
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>
@@ -525,6 +527,15 @@ export interface Database {
           user_id: string
           display_name: string
           total_amount: number
+        }[]
+      }
+      balance_trend: {
+        Args: { p_household_id: string; p_months?: number }
+        Returns: {
+          period_month: string
+          member_a: string
+          member_b: string
+          net_amount: number
         }[]
       }
     }

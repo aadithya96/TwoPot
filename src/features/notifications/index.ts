@@ -6,3 +6,4 @@ export {
 } from './usePushNotifications'
 export { NotificationSettings } from './NotificationSettings'
 export type { NotificationSettingsProps } from './NotificationSettings'
+export { notifyPartnerOfExpense } from './notifyPartner'

@@ -25,6 +25,7 @@ import { GoalCard, useGoals } from '@/features/goals'
 import { SettlementCard, useIsSettled, useSettlement } from '@/features/settlement'
 import { PotsOverview } from '@/features/pots'
 import { useCurrentUser } from '@/features/auth'
+import { ActivityFeed } from '@/features/household'
 import { SetupChecklist, type SetupStep } from '@/features/home/SetupChecklist'
 import { SETUP_DISMISSED_KEY } from '@/lib/storageKeys'
 
@@ -195,6 +196,7 @@ export function HomePage() {
           householdId={householdId}
           periodMonth={month}
           isSettled={isSettled ?? false}
+          currentUserId={currentUser?.id}
         />
       )}
 
@@ -305,6 +307,8 @@ export function HomePage() {
         )}
       </Box>
       </Box>
+
+      {householdId && members.length > 1 && <ActivityFeed householdId={householdId} />}
 
       <Fab
         color="primary"

@@ -101,6 +101,33 @@ export function useMarkSettled() {
   })
 }
 
+/** One month of the running balance between the two household members, from `balance_trend`. */
+export interface BalanceTrendRow {
+  period_month: string
+  member_a: string
+  member_b: string
+  net_amount: number
+}
+
+/**
+ * Fetches the last several months of running balance between the household's
+ * two members via the `balance_trend` RPC, oldest first. `net_amount` is
+ * signed from `member_a`'s (the earlier-joined member's) perspective:
+ * positive means they're owed money, negative means they owe it.
+ */
+export function useBalanceTrend(householdId: string | undefined): UseQueryResult<BalanceTrendRow[]> {
+  return useQuery({
+    queryKey: queryKeys.balanceTrend(householdId ?? 'anonymous'),
+    queryFn: async (): Promise<BalanceTrendRow[]> => {
+      if (!householdId) return []
+      const { data, error } = await supabase.rpc('balance_trend', { p_household_id: householdId })
+      if (error) throw error
+      return data ?? []
+    },
+    enabled: Boolean(householdId),
+  })
+}
+
 /** Fetches past settlements for a household, most recent period first. */
 export function useSettlementHistory(householdId: string | undefined): UseQueryResult<Settlement[]> {
   return useQuery({
