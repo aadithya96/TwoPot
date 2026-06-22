@@ -21,6 +21,7 @@ import { useNavigate } from 'react-router-dom'
 import { useSnackbar } from 'notistack'
 import { useHousehold, useGenerateInvite, useLeaveHousehold } from '@/features/auth/useHousehold'
 import { SETUP_DISMISSED_KEY } from '@/lib/storageKeys'
+import { errorMessage } from '@/lib/errors'
 
 /** Settings sub-page for managing the household: shows members and the partner invite code. */
 export function HouseholdPage() {
@@ -49,7 +50,7 @@ export function HouseholdPage() {
       enqueueSnackbar('You left the household', { variant: 'success' })
       navigate('/onboarding', { replace: true })
     } catch (error) {
-      enqueueSnackbar(error instanceof Error ? error.message : 'Could not leave household', {
+      enqueueSnackbar(errorMessage(error, 'Could not leave household'), {
         variant: 'error',
       })
     }
