@@ -7,12 +7,28 @@ metadata:
     cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: traefik
+  # The first host here is treated as canonical: the deploy workflow derives
+  # VITE_APP_URL from `grep -m1 'host:'` in this file. Keep the live host first.
+  #
+  # Today the app is served from the DuckDNS subdomain. DuckDNS auto-resolves any
+  # label under ad-labs.duckdns.org to the same IP, so no extra DNS record is
+  # needed and Let's Encrypt HTTP-01 validates it directly.
+  #
+  # LATER — when ad-labs.com is purchased and its DNS A/AAAA record points at this
+  # cluster, make twopot.ad-labs.com canonical by adding it as the FIRST entry in
+  # both lists below (and optionally keep the duckdns host for backward compat):
+  # add twopot.ad-labs.com ahead of the duckdns name under tls.hosts, and add a
+  # second rules entry for it identical to the one below. cert-manager will then
+  # issue a SAN cert covering both. (Wording avoids a literal "host:" line so the
+  # workflow's VITE_APP_URL derivation never picks this comment.)
+  # Only add the ad-labs.com host AFTER its DNS resolves, or the ACME challenge
+  # for that name will fail and block cert issuance for the whole certificate.
   tls:
     - hosts:
-        - twopot.ad-labs.com
+        - twopot.ad-labs.duckdns.org
       secretName: twopot-tls
   rules:
-    - host: twopot.ad-labs.com
+    - host: twopot.ad-labs.duckdns.org
       http:
         paths:
           - path: /
