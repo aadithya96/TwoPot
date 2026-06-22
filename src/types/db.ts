@@ -474,6 +474,10 @@ export interface Database {
         Args: { hid: string }
         Returns: void
       }
+      remove_member: {
+        Args: { p_household_id: string; p_member_id: string; p_keep_expenses: boolean }
+        Returns: void
+      }
       increment_goal_amount: {
         Args: { goal_id: string; delta: number }
         Returns: void

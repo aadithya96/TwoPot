@@ -20,8 +20,10 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import ShareIcon from '@mui/icons-material/Share'
 import GroupAddIcon from '@mui/icons-material/GroupAdd'
 import VpnKeyIcon from '@mui/icons-material/VpnKey'
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { useCurrentUser } from './useAuth'
+import { queryKeys } from '@/lib/queryKeys'
+import { useCurrentUser, useSession } from './useAuth'
 import { useCreateHousehold, useJoinHousehold } from './useHousehold'
 
 const STEPS = ['Welcome', 'Your Household', 'Invite Partner', 'Done']
@@ -34,9 +36,12 @@ type HouseholdChoice = 'create' | 'join'
  */
 export function OnboardingFlow() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const { data: session } = useSession()
   const { data: profile } = useCurrentUser()
   const createHousehold = useCreateHousehold()
   const joinHousehold = useJoinHousehold()
+  const [finishing, setFinishing] = useState(false)
 
   const [activeStep, setActiveStep] = useState(0)
   const [displayName, setDisplayName] = useState('')
@@ -67,6 +72,23 @@ export function OnboardingFlow() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
+    }
+  }
+
+  // Before leaving onboarding, force a fresh fetch of the household query so
+  // the AuthGuard sees the just-created/joined household instead of its cached
+  // "no household" result -- otherwise it bounces the user back to /onboarding
+  // and they have to complete the wizard a second time.
+  const handleFinish = async () => {
+    setFinishing(true)
+    try {
+      await queryClient.refetchQueries({
+        queryKey: queryKeys.household(session?.user.id ?? 'anonymous'),
+        type: 'all',
+      })
+    } finally {
+      setFinishing(false)
+      navigate('/')
     }
   }
 
@@ -210,8 +232,8 @@ export function OnboardingFlow() {
             <CheckCircle color="primary" sx={{ fontSize: 96 }} />
           </Grow>
           <Typography variant="headlineSmall">You&apos;re all set</Typography>
-          <Button variant="contained" fullWidth onClick={() => navigate('/')}>
-            Let&apos;s go
+          <Button variant="contained" fullWidth onClick={() => void handleFinish()} disabled={finishing}>
+            {finishing ? 'Loading…' : "Let's go"}
           </Button>
         </Stack>
       )}
