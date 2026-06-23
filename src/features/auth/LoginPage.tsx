@@ -18,6 +18,7 @@ export function LoginPage() {
 
   return (
     <Box
+      component="main"
       sx={{
         height: '100dvh',
         display: 'flex',
