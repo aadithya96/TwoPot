@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams, useNavigate, Link as RouterLink } from 'react-router-dom'
 import {
   Box,
@@ -19,15 +19,31 @@ import { useHouseholdStore } from '@/stores/householdStore'
 import { formatMonth, monthKey } from '@/lib/dates'
 import { formatINR } from '@/lib/currency'
 import { useCategories } from '@/hooks/useCategories'
-import { useExpenses, AddExpenseSheet, ExpenseRow } from '@/features/expenses'
+import { useExpenses } from '@/features/expenses/useExpenses'
+import { ExpenseRow } from '@/features/expenses/ExpenseRow'
 import { useBudgetUsage } from '@/features/budgets'
 import { GoalCard, useGoals } from '@/features/goals'
-import { SettlementCard, useIsSettled, useSettlement } from '@/features/settlement'
-import { PotsOverview } from '@/features/pots'
+import { useIsSettled, useSettlement } from '@/features/settlement/useSettlement'
 import { useCurrentUser } from '@/features/auth'
-import { ActivityFeed } from '@/features/household'
 import { SetupChecklist, type SetupStep } from '@/features/home/SetupChecklist'
 import { SETUP_DISMISSED_KEY } from '@/lib/storageKeys'
+import { lazyWithRetry } from '@/lib/lazyWithRetry'
+
+// Heavy or below-the-fold sections are code-split so they stay out of the
+// initial Home bundle. SettlementCard pulled in the settlement barrel (incl.
+// recharts) and AddExpenseSheet only renders on demand from the FAB.
+const SettlementCard = lazyWithRetry(() =>
+  import('@/features/settlement/SettlementCard').then((m) => ({ default: m.SettlementCard }))
+)
+const PotsOverview = lazyWithRetry(() =>
+  import('@/features/pots/PotsOverview').then((m) => ({ default: m.PotsOverview }))
+)
+const ActivityFeed = lazyWithRetry(() =>
+  import('@/features/household/ActivityFeed').then((m) => ({ default: m.ActivityFeed }))
+)
+const AddExpenseSheet = lazyWithRetry(() =>
+  import('@/features/expenses/AddExpenseSheet').then((m) => ({ default: m.AddExpenseSheet }))
+)
 
 /**
  * Dashboard: current-month spend summary, member contribution chips, settlement card,
@@ -160,7 +176,7 @@ export function HomePage() {
           {isExpensesLoading ? (
             <Skeleton variant="text" width={160} height={48} />
           ) : (
-            <Typography variant="headlineMedium" sx={{ mt: 0.5 }}>
+            <Typography variant="headlineMedium" component="p" sx={{ mt: 0.5 }}>
               {formatINR(totalSpend)}
             </Typography>
           )}
@@ -169,6 +185,7 @@ export function HomePage() {
               <LinearProgress
                 variant="determinate"
                 value={Math.min(100, (totalSpend / totalBudget) * 100)}
+                aria-label={`Spent ${formatINR(totalSpend)} of ${formatINR(totalBudget)} budget`}
                 sx={{ height: 8, borderRadius: 4 }}
               />
               <Typography variant="labelSmall" color="text.secondary" sx={{ mt: 0.5 }}>
@@ -180,7 +197,11 @@ export function HomePage() {
             {members.map((member) => (
               <Chip
                 key={member.id}
-                avatar={<Avatar src={member.avatar_url ?? undefined}>{member.display_name[0]}</Avatar>}
+                avatar={
+                  <Avatar src={member.avatar_url ?? undefined} alt={member.display_name}>
+                    {member.display_name[0]}
+                  </Avatar>
+                }
                 label={formatINR(contributionsByMember.get(member.id) ?? 0)}
                 variant="outlined"
               />
@@ -190,17 +211,23 @@ export function HomePage() {
       </Card>
 
       {householdId && hasSharedExpenses && (
-        <SettlementCard
-          settlement={settlement ?? null}
-          members={members}
-          householdId={householdId}
-          periodMonth={month}
-          isSettled={isSettled ?? false}
-          currentUserId={currentUser?.id}
-        />
+        <Suspense fallback={null}>
+          <SettlementCard
+            settlement={settlement ?? null}
+            members={members}
+            householdId={householdId}
+            periodMonth={month}
+            isSettled={isSettled ?? false}
+            currentUserId={currentUser?.id}
+          />
+        </Suspense>
       )}
 
-      {householdId && <PotsOverview householdId={householdId} month={month} />}
+      {householdId && (
+        <Suspense fallback={null}>
+          <PotsOverview householdId={householdId} month={month} />
+        </Suspense>
+      )}
 
       {budgetAlerts.length > 0 && (
         <Stack spacing={1}>
@@ -308,7 +335,11 @@ export function HomePage() {
       </Box>
       </Box>
 
-      {householdId && members.length > 1 && <ActivityFeed householdId={householdId} />}
+      {householdId && members.length > 1 && (
+        <Suspense fallback={null}>
+          <ActivityFeed householdId={householdId} />
+        </Suspense>
+      )}
 
       <Fab
         color="primary"
@@ -319,11 +350,15 @@ export function HomePage() {
         <AddOutlinedIcon />
       </Fab>
 
-      <AddExpenseSheet
-        open={isAddOpen}
-        onClose={() => setIsAddOpen(false)}
-        categories={categories ?? []}
-      />
+      {isAddOpen && (
+        <Suspense fallback={null}>
+          <AddExpenseSheet
+            open={isAddOpen}
+            onClose={() => setIsAddOpen(false)}
+            categories={categories ?? []}
+          />
+        </Suspense>
+      )}
     </Box>
   )
 }

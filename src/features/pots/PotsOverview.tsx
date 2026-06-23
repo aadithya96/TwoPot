@@ -46,6 +46,7 @@ function PotBar({
         variant="determinate"
         value={ratio}
         color={overspent ? 'error' : 'primary'}
+        aria-label={`${label} spending`}
         sx={{ height: 8, borderRadius: 4, mt: 0.75 }}
       />
       <Typography variant="labelSmall" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
@@ -99,7 +100,7 @@ export function PotsOverview({ householdId, month }: PotsOverviewProps) {
                 key={member.userId}
                 label={
                   <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                    <Avatar src={member.avatarUrl ?? undefined} sx={{ width: 24, height: 24 }}>
+                    <Avatar src={member.avatarUrl ?? undefined} alt={member.displayName} sx={{ width: 24, height: 24 }}>
                       {member.displayName[0]}
                     </Avatar>
                     <span>{member.displayName}'s pot</span>

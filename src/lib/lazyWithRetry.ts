@@ -1,6 +1,9 @@
 import { lazy, type ComponentType } from 'react'
 
-type ImportFactory<T> = () => Promise<{ default: T }>
+// `ComponentType<any>` (as React's own `lazy` uses) is required so the wrapped
+// component's prop types are preserved through inference.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ImportFactory<T extends ComponentType<any>> = () => Promise<{ default: T }>
 
 /** sessionStorage flag that records we've already forced a reload for a failed chunk. */
 const RELOAD_FLAG = 'twopot:chunk-reload'
@@ -15,7 +18,8 @@ const RELOAD_FLAG = 'twopot:chunk-reload'
  * names. A sessionStorage flag guards against an infinite reload loop when the
  * chunk is genuinely unreachable (e.g. the user is offline).
  */
-export function lazyWithRetry<T extends ComponentType<unknown>>(factory: ImportFactory<T>) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function lazyWithRetry<T extends ComponentType<any>>(factory: ImportFactory<T>) {
   return lazy(async () => {
     try {
       const component = await factory()

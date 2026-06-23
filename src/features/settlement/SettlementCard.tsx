@@ -97,12 +97,12 @@ export function SettlementCard({
           <Stack spacing={2}>
             <Stack direction="row" spacing={2} sx={{ alignItems: 'center', justifyContent: 'center' }}>
               <Stack spacing={0.5} sx={{ alignItems: 'center' }}>
-                <Avatar src={debtor?.avatar_url ?? undefined}>{debtor?.display_name?.[0]}</Avatar>
+                <Avatar src={debtor?.avatar_url ?? undefined} alt={debtor?.display_name ?? ''}>{debtor?.display_name?.[0]}</Avatar>
                 <Typography variant="labelSmall">{debtor?.display_name ?? 'Unknown'}</Typography>
               </Stack>
               <ArrowForward color="action" />
               <Stack spacing={0.5} sx={{ alignItems: 'center' }}>
-                <Avatar src={creditor?.avatar_url ?? undefined}>{creditor?.display_name?.[0]}</Avatar>
+                <Avatar src={creditor?.avatar_url ?? undefined} alt={creditor?.display_name ?? ''}>{creditor?.display_name?.[0]}</Avatar>
                 <Typography variant="labelSmall">{creditor?.display_name ?? 'Unknown'}</Typography>
               </Stack>
             </Stack>

@@ -4,6 +4,7 @@ import {
   Divider,
   Drawer,
   List,
+  ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
@@ -86,25 +87,25 @@ export function SideNav({ avatarUrl, displayName, onSignOut }: SideNavProps) {
           const active = isActive(location.pathname, item.path)
           const Icon = active ? item.ActiveIcon : item.Icon
           return (
-            <ListItemButton
-              key={item.path}
-              selected={active}
-              onClick={() => navigate(item.path)}
-              sx={{
-                borderRadius: 2,
-                mb: 0.5,
-                '&.Mui-selected': { bgcolor: 'primary.light', color: 'primary.dark' },
-                '&.Mui-selected:hover': { bgcolor: 'primary.light' },
-                '&.Mui-selected .MuiListItemIcon-root': { color: 'primary.dark' },
-              }}
-            >
-              <ListItemIcon sx={{ minWidth: 40 }}>
-                <Icon />
-              </ListItemIcon>
-              <ListItemText slotProps={{ primary: { variant: 'labelLarge' } }}>
-                {item.label}
-              </ListItemText>
-            </ListItemButton>
+            <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                selected={active}
+                onClick={() => navigate(item.path)}
+                sx={{
+                  borderRadius: 2,
+                  '&.Mui-selected': { bgcolor: 'primary.light', color: 'primary.dark' },
+                  '&.Mui-selected:hover': { bgcolor: 'primary.light' },
+                  '&.Mui-selected .MuiListItemIcon-root': { color: 'primary.dark' },
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  <Icon />
+                </ListItemIcon>
+                <ListItemText slotProps={{ primary: { variant: 'labelLarge' } }}>
+                  {item.label}
+                </ListItemText>
+              </ListItemButton>
+            </ListItem>
           )
         })}
       </List>

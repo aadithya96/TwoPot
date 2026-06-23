@@ -101,6 +101,7 @@ export function ExpenseRow({ expense, currentUserId, householdId, month, categor
         </Typography>
         <Avatar
           src={expense.payer?.avatar_url ?? undefined}
+          alt={expense.payer?.display_name ?? ''}
           sx={{ width: 28, height: 28, flexShrink: 0 }}
         >
           {expense.payer?.display_name?.[0] ?? '?'}
