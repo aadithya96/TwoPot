@@ -34,10 +34,8 @@ jobs:
         env:
           SUPABASE_CLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Start local Supabase + apply migrations
-        run: |
-          supabase start
-          supabase db push
+      - name: Start local Supabase (applies migrations automatically)
+        run: supabase start
 
       - name: Write .env.local from the local Supabase stack
         run: |

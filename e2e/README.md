@@ -8,9 +8,8 @@ two signed-in browser contexts.
 ## Setup (one-time)
 
 ```bash
-supabase start
-supabase db push
-cp .env.example .env.local   # if you haven't already for local dev
+supabase start                # applies migrations in supabase/migrations automatically
+cp .env.example .env.local    # if you haven't already for local dev
 ```
 
 Fill `.env.local` with the local `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`
