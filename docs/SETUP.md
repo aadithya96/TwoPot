@@ -41,10 +41,15 @@ project, not here — see [DEPLOYMENT.md](DEPLOYMENT.md).
 ## Start Supabase locally
 
 ```bash
-supabase start
-supabase db push        # applies migrations in supabase/migrations
+supabase start           # applies migrations in supabase/migrations automatically
 supabase gen types typescript --local > src/types/db.ts
 ```
+
+`supabase start` applies every migration in `supabase/migrations` to the fresh
+local stack on its own. If you add a new migration while the stack is already
+running, apply just that one with `supabase migration up --local` — don't use
+`supabase db push`, which targets a **linked remote** project (`supabase
+link`) and isn't relevant to local-only dev.
 
 ## Edge functions (optional, local)
 
