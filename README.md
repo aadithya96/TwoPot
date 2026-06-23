@@ -57,6 +57,7 @@ pnpm dev          # http://localhost:5173
 pnpm type-check   # tsc strict, zero errors
 pnpm lint         # ESLint
 pnpm test         # Vitest
+pnpm test:e2e     # Playwright (needs local Supabase — see e2e/README.md)
 pnpm build        # production build
 ```
 
