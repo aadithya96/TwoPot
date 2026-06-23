@@ -1,5 +1,7 @@
 # TwoPot
 
+[![Lighthouse](https://github.com/aadithya96/TwoPot/actions/workflows/lighthouse.yaml/badge.svg)](https://github.com/aadithya96/TwoPot/actions/workflows/lighthouse.yaml)
+
 A household expense tracking and budgeting PWA for exactly two people. React +
 Vite + TypeScript on the frontend, Supabase (Postgres + Auth + Realtime +
 Storage + Edge Functions) on the backend, deployed as a static nginx image on
