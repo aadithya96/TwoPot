@@ -24,6 +24,16 @@ export interface PersonContributionRow {
   total_amount: number
 }
 
+/** One row of the `category_anomalies` RPC result: a category running well above its recent average. */
+export interface CategoryAnomalyRow {
+  category_id: string
+  category_name: string
+  category_color: string
+  current_amount: number
+  avg_amount: number
+  ratio: number
+}
+
 /** Fetches per-category spend totals for `householdId` in `month` (YYYY-MM). */
 export function useMonthlyByCategory(
   householdId: string | undefined,
@@ -50,6 +60,25 @@ export function useMonthlyTrend(householdId: string | undefined): UseQueryResult
     queryFn: async () => {
       const { data, error } = await supabase.rpc('monthly_trend', {
         p_household_id: householdId as string,
+      })
+      if (error) throw new Error(error.message)
+      return data ?? []
+    },
+    enabled: Boolean(householdId),
+  })
+}
+
+/** Fetches categories whose shared spend in `month` is running well above their recent average. */
+export function useCategoryAnomalies(
+  householdId: string | undefined,
+  month: string
+): UseQueryResult<CategoryAnomalyRow[]> {
+  return useQuery({
+    queryKey: queryKeys.categoryAnomalies(householdId ?? 'none', month),
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('category_anomalies', {
+        p_household_id: householdId as string,
+        p_month: month,
       })
       if (error) throw new Error(error.message)
       return data ?? []

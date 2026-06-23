@@ -1,5 +1,12 @@
-export { useMonthlyByCategory, useMonthlyTrend, usePersonContributions } from './useInsights'
-export type { MonthlyByCategoryRow, MonthlyTrendRow, PersonContributionRow } from './useInsights'
+export { useMonthlyByCategory, useMonthlyTrend, usePersonContributions, useCategoryAnomalies } from './useInsights'
+export type {
+  MonthlyByCategoryRow,
+  MonthlyTrendRow,
+  PersonContributionRow,
+  CategoryAnomalyRow,
+} from './useInsights'
+export { AnomalyNudges } from './AnomalyNudges'
+export type { AnomalyNudgesProps } from './AnomalyNudges'
 export { SpendByCategory } from './SpendByCategory'
 export type { SpendByCategoryProps } from './SpendByCategory'
 export { MonthlyTrend } from './MonthlyTrend'
