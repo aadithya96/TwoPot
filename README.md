@@ -1,5 +1,7 @@
 # TwoPot
 
+[![CI](https://github.com/aadithya96/TwoPot/actions/workflows/ci.yaml/badge.svg)](https://github.com/aadithya96/TwoPot/actions/workflows/ci.yaml)
+[![Deploy](https://github.com/aadithya96/TwoPot/actions/workflows/deploy.yaml/badge.svg)](https://github.com/aadithya96/TwoPot/actions/workflows/deploy.yaml)
 [![Lighthouse](https://github.com/aadithya96/TwoPot/actions/workflows/lighthouse.yaml/badge.svg)](https://github.com/aadithya96/TwoPot/actions/workflows/lighthouse.yaml)
 
 A household expense tracking and budgeting PWA for exactly two people. React +
