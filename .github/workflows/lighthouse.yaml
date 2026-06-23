@@ -1,0 +1,43 @@
+name: Lighthouse
+
+# Runs a Lighthouse audit against the production build on a weekly schedule so
+# the README badge reflects the app's current performance / accessibility /
+# best-practices / SEO health. Thresholds live in lighthouserc.json; a drop
+# below them fails the run (and turns the badge red). Also runnable on demand.
+on:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays at 06:00 UTC
+  workflow_dispatch:
+
+# Never run two scheduled audits at once; a newer run supersedes an older one.
+concurrency:
+  group: lighthouse-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.3
+
+      - uses: pnpm/action-setup@v6.0.9
+
+      - uses: actions/setup-node@v6.4.0
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Placeholder env so the SPA boots; the audited login page makes no
+      # backend calls, so real Supabase credentials are not needed.
+      - run: cp .env.example .env
+
+      - run: pnpm build
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          configPath: ./lighthouserc.json
+          uploadArtifacts: true
+          temporaryPublicStorage: true

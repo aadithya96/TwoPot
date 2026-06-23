@@ -9,11 +9,19 @@ on:
     paths-ignore:
       - 'supabase/migrations/**'
       - 'supabase/config.toml'
+  # Also run on merges to main so the README CI badge reflects default-branch
+  # health (workflow badges only track runs on the default branch).
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'supabase/migrations/**'
+      - 'supabase/config.toml'
 
-# Cancel any in-progress run for this PR when new commits are pushed, so we
-# never report a stale (and possibly green) status for outdated code.
+# Cancel any in-progress run for the same PR or branch when new commits are
+# pushed, so we never report a stale (and possibly green) status for outdated
+# code.
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number }}
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
