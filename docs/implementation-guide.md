@@ -1,6 +1,13 @@
 # TwoPot — Implementation Guide
 
-> Expense tracking & budgeting PWA for two people. React + Vite + Supabase (self-hosted) on k3s.
+> Expense tracking & budgeting PWA for two people. React + Vite frontend (served
+> as a static nginx image on k3s) + hosted Supabase backend.
+>
+> **Note:** This is the original build plan. Some early sections (e.g. the
+> Tailwind/Radix setup in §1, "self-hosted Supabase on k3s" in §15) describe the
+> initial sketch, not the shipped app — the per-section **Deviations** notes and
+> the §17 checklist record what actually changed. For current architecture see
+> `docs/ARCHITECTURE.md`; for deployment see `docs/DEPLOYMENT.md`.
 
 ---
 
@@ -2793,77 +2800,94 @@ feature/*     → PR only (lint + test)
 
 ## 17. Phase Checklist
 
-> **Status:** All three phases' feature scope (expenses, budgets/rollover,
-> savings goals, settlement, insights/charts, PWA install + offline queue,
-> push notifications, dark mode, mobile UX patterns) is implemented and
-> wired end-to-end — see the per-section "Todo"/"Deviations" notes above for
-> what shipped vs. what changed from the original sketch. The boxes below
-> are left as originally drafted for planning purposes; the ops/CI items
-> (Lighthouse CI, Dependabot, staging namespace, physical-device test runs)
-> are the main items not yet done.
+> **Status:** All three phases' core feature scope is implemented and wired
+> end-to-end, and the app has since grown well beyond the original sketch (see
+> "Features built beyond this guide" below). The boxes below are now checked to
+> reflect the actual codebase. A handful of items remain genuinely open:
+> per-expense **offline write queue** (only an `offlineQueueCount` UI stub
+> exists today), the **service-worker `push` event handler** (subscription
+> works; displaying notifications needs a custom `injectManifest` SW),
+> automatic **budget rollover scheduling**, and the ops/QA items (Lighthouse
+> CI, Dependabot, staging namespace, physical-device runs, Playwright E2E).
 
 ### Phase 1 — Core (target: 2 weeks)
 
-- [ ] Project scaffold + tooling
+- [x] Project scaffold + tooling
 - [x] Database schema (all tables, RLS, triggers)
-- [ ] Google OAuth + household invite flow
-- [ ] Add / edit / delete expenses (CRUD)
-- [ ] Expense list by month
-- [ ] Category picker
-- [ ] 50/50 shared split
-- [ ] Basic monthly summary (total spend, per-category totals)
-- [ ] Real-time sync between devices
-- [ ] k3s deployment + TLS
-- [ ] CI/CD pipeline (build + deploy)
-- [ ] Bottom nav component (4 tabs, 44px tap targets)
-- [ ] `dvh` viewport units + safe area insets on all layout components
-- [ ] `viewport-fit=cover` meta tag
-- [ ] `font-size: 16px` on all inputs (prevents iOS auto-zoom)
-- [ ] `inputMode="decimal"` on amount inputs, `inputMode="numeric"` on percentage inputs
-- [ ] `useBackButton` hook wired into all sheets and dialogs
-- [ ] `useInstallState` + `InstallBanner` component
+- [x] Google OAuth + household invite flow
+- [x] Add / edit / delete expenses (CRUD)
+- [x] Expense list by month
+- [x] Category picker
+- [x] Equal shared split (`'equal'`, formerly "50/50")
+- [x] Basic monthly summary (total spend, per-category totals)
+- [x] Real-time sync between devices
+- [x] k3s deployment + TLS
+- [x] CI/CD pipeline (build + deploy)
+- [x] Bottom nav component (4 tabs, 44px tap targets)
+- [x] `dvh` viewport units + safe area insets on all layout components
+- [x] `viewport-fit=cover` meta tag
+- [x] `font-size: 16px` on all inputs (prevents iOS auto-zoom)
+- [x] `inputMode="decimal"` on amount inputs, `inputMode="numeric"` on percentage inputs
+- [x] `useBackButton` hook wired into all sheets and dialogs
+- [x] `useInstallState` + `InstallBanner` component
 
 ### Phase 2 — Budgets & Goals (target: 1.5 weeks)
 
-- [ ] Budget creation (overall + per-category)
-- [ ] Budget progress UI with alerts
-- [ ] Budget rollover
-- [ ] Savings goals (create, contribute, complete)
-- [ ] Custom split (slider)
-- [ ] Personal expense tracking
-- [ ] Receipt photo upload (with `capture="environment"` + `browser-image-compression`)
-- [ ] Recurring expenses
-- [ ] PWA install prompt + service worker
-- [ ] Offline expense queue
-- [ ] `useSwipeToDelete` wired into `ExpenseRow`
-- [ ] `useVisualViewport` wired into `AddExpenseSheet` (keyboard repositioning)
-- [ ] `usePullToRefresh` on expense list
-- [ ] iOS install instructions (Share → Add to Home Screen) with visual guide
+- [x] Budget creation (overall + per-category)
+- [x] Budget progress UI with alerts
+- [ ] Budget rollover — `process_budget_rollover` SQL exists but is not yet scheduled
+- [x] Savings goals (create, contribute, complete)
+- [x] Custom split (slider)
+- [x] Personal expense tracking
+- [x] Receipt photo upload (with `capture="environment"` + `browser-image-compression`)
+- [x] Recurring expenses
+- [x] PWA install prompt + service worker
+- [ ] Offline expense queue — only a count stub in `uiStore`; no IndexedDB queue yet
+- [x] `useSwipeToDelete` wired into `ExpenseRow`
+- [x] `useVisualViewport` wired into `AddExpenseSheet` (keyboard repositioning)
+- [x] `usePullToRefresh` on expense list
+- [x] iOS install instructions (Share → Add to Home Screen)
 - [ ] Push notification iOS gate (only when installed as PWA)
 
 ### Phase 3 — Polish & Insights (target: 1.5 weeks)
 
-- [ ] Insights page (3 charts + stat cards)
-- [ ] Settlement view + "mark as settled" flow
-- [ ] Push notifications (budget alerts, goal complete, partner expense)
-- [ ] Dark mode (system preference + manual override, synced via profiles table)
-- [ ] Notification settings page
-- [ ] Empty states + loading skeletons
-- [ ] Lazy load InsightsPage, SettlementPage, GoalsPage via `React.lazy`
-- [ ] `useInView` deferred chart rendering
-- [ ] `ScrollRestoration` component
-- [ ] `@media (prefers-reduced-motion: reduce)` global CSS rule
+- [x] Insights page (3 charts + stat cards)
+- [x] Settlement view + "mark as settled" flow
+- [~] Push notifications — subscribe + `send-push`/`settlement-reminders` done;
+  SW `push` display handler and budget/goal triggers still open
+- [x] Dark mode (system preference + manual override; persisted to `localStorage`, not `profiles`)
+- [x] Notification settings page
+- [x] Empty states + loading skeletons
+- [x] Lazy load pages via `lazyWithRetry` (React.lazy wrapper)
+- [x] `useInView` deferred chart rendering
+- [x] `ScrollRestoration` (`useScrollRestoration`)
+- [x] `@media (prefers-reduced-motion: reduce)` global CSS rule
 - [ ] Lighthouse mobile audit (throttled): Performance ≥ 85, PWA ≥ 90
 - [ ] Physical device test — Android Chrome (full checklist in §14.17)
 - [ ] Physical device test — iOS Safari 17+ (full checklist in §14.17)
 - [ ] End-to-end testing (Playwright) for core flows
 
-### Later
+### Features built beyond this guide
 
-- [ ] CSV / PDF export of monthly expenses
-- [ ] Yearly budget view
-- [ ] Per-person budget envelopes
-- [ ] Partner presence indicator (online/typing)
-- [ ] Telegram / WhatsApp settlement reminder bot
-- [ ] UPI deep-link in settlement card ("Pay via UPI")
-- [ ] YTD insights + year comparison
+Shipped after the original plan; see `docs/todo.md` and the migrations noted:
+
+- [x] **Two Pots income model** — shared pot + personal pots with equal /
+  proportional / custom allocation (`015_two_pots`, `src/features/pots`)
+- [x] **Income-based fair splitting** — shared expenses default to income ratio
+  (`013_member_income`, `src/features/splitting`)
+- [x] **Custom category management** — add / edit / delete (`src/features/categories`)
+- [x] **Natural-language quick-add** — `parse-expense` edge function
+- [x] **Receipt OCR autofill** — `scan-receipt` edge function
+- [x] **Activity / audit log** — who-did-what feed (`014_audit_log`, `src/features/household`)
+- [x] **Member management** — remove member, leave household, reset invite
+  (`016`–`019`)
+- [x] **Partner balance-over-time trend** (`020_balance_trend`, `BalanceTrend.tsx`)
+- [x] **UPI settle-up deep links** (`021_upi_vpa`, `src/lib/upi.ts`, `UpiSettings`)
+- [x] **Settlement reminders** — `settlement-reminders` edge function
+- [x] **Adaptive desktop layout** — side navigation rail on desktop
+
+### Later / backlog
+
+See `docs/todo.md` for the live backlog. Open ideas include CSV / PDF export,
+multi-currency + travel mode, bank/UPI SMS import, smart auto-categorization,
+safe-to-spend daily allowance, spending heatmap, and partner presence.
