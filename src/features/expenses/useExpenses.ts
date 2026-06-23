@@ -80,6 +80,8 @@ export function useAddExpense() {
       const month = variables.date.slice(0, 7)
       void queryClient.invalidateQueries({ queryKey: queryKeys.expenses(variables.householdId, month) })
       void queryClient.invalidateQueries({ queryKey: queryKeys.budgetUsage(variables.householdId) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.settlement(variables.householdId, month) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.balanceTrend(variables.householdId) })
       void notifyPartnerOfExpense({
         payerId: variables.paidBy,
         amount: variables.amount,
@@ -123,6 +125,8 @@ export function useUpdateExpense() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.expenses(variables.householdId, month) })
       void queryClient.invalidateQueries({ queryKey: queryKeys.budgetUsage(variables.householdId) })
       void queryClient.invalidateQueries({ queryKey: queryKeys.expense(variables.id) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.settlement(variables.householdId, month) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.balanceTrend(variables.householdId) })
     },
   })
 }
@@ -160,6 +164,8 @@ export function useDeleteExpense() {
     onSettled: (_data, _error, variables) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.expenses(variables.householdId, variables.month) })
       void queryClient.invalidateQueries({ queryKey: queryKeys.budgetUsage(variables.householdId) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.settlement(variables.householdId, variables.month) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.balanceTrend(variables.householdId) })
     },
   })
 }
