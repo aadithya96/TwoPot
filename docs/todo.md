@@ -40,7 +40,11 @@ Working backlog of UI/UX and feature work. Items move from **Up next** →
 ## ▶️ Up next (recommended order)
 
 1. Safe-to-spend / daily allowance (high-visibility Home widget)
-2. E2E test suite (Playwright) — biggest gap in current safety net
+2. Fix `useSettlement`/`useBalanceTrend` not invalidating on `useAddExpense` /
+   `useUpdateExpense` (found while writing settlement E2E coverage — the
+   settle-up card and balance trend only refresh after a reload or an
+   unrelated realtime event, not immediately after adding/editing an
+   expense)
 
 ---
 
@@ -97,8 +101,9 @@ Working backlog of UI/UX and feature work. Items move from **Up next** →
 
 ## 🧪 Reliability & testing
 
-- [ ] Playwright (or similar) end-to-end suite covering onboarding, add
-      expense, settle-up, and realtime sync between two sessions
+- [x] Playwright end-to-end suite covering onboarding (create/join), adding
+      an expense, the settle-up card, and realtime sync between two sessions
+      (`e2e/`, `pnpm test:e2e`, `.github/workflows/e2e.yaml`)
 - [ ] Expand Vitest coverage on edge functions (`parse-expense`,
       `scan-receipt`, `settlement-reminders`) with MSW-mocked Anthropic calls
 - [ ] Error tracking (Sentry or similar) wired into both the SPA and edge

@@ -72,4 +72,6 @@ Open http://localhost:5173.
 - `pnpm type-check` — TypeScript strict check, zero errors required
 - `pnpm lint` — ESLint
 - `pnpm test` — Vitest
+- `pnpm test:e2e` — Playwright end-to-end suite against a local Supabase stack
+  (see [`e2e/README.md`](../e2e/README.md))
 - `pnpm build` — production build
