@@ -7,6 +7,30 @@ export default defineConfig({
   resolve: {
     alias: { '@': path.resolve(__dirname, 'src') },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Split the large vendor libraries that are needed for first paint into
+        // their own chunks so they cache independently of app code and download
+        // in parallel. Heavier route-specific libraries (recharts, zod) are
+        // deliberately left to Vite's default splitting so they stay in the
+        // lazy chunks that use them and never load on the critical path.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return
+          if (id.includes('@supabase')) return 'supabase'
+          if (id.includes('@mui') || id.includes('@emotion')) return 'mui'
+          if (id.includes('@tanstack')) return 'query'
+          if (
+            id.includes('/react/') ||
+            id.includes('/react-dom/') ||
+            id.includes('/react-router') ||
+            id.includes('/scheduler/')
+          )
+            return 'react'
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     VitePWA({

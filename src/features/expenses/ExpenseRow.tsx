@@ -1,13 +1,21 @@
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { Avatar, Box, Chip, Typography } from '@mui/material'
 import DeleteIcon from '@mui/icons-material/Delete'
 import { formatINR } from '@/lib/currency'
 import { formatRelativeDate } from '@/lib/dates'
 import { useSwipeToDelete } from '@/hooks/useSwipeToDelete'
-import { ExpenseDetailSheet } from './ExpenseDetailSheet'
+import { lazyWithRetry } from '@/lib/lazyWithRetry'
 import { useDeleteExpense } from './useExpenses'
 import type { ExpenseWithRelations } from '@/types/app'
 import type { Category } from '@/types/app'
+
+// The detail sheet (and the edit form it embeds) pulls in zod + the receipt
+// image-compression library. Loading it lazily on first tap keeps that weight
+// out of the expense-list render path, which is on the Home/Expenses critical
+// path and was eagerly dragging ~66KB gzip into the initial bundle.
+const ExpenseDetailSheet = lazyWithRetry(() =>
+  import('./ExpenseDetailSheet').then((m) => ({ default: m.ExpenseDetailSheet }))
+)
 
 export interface ExpenseRowProps {
   /** Expense to render, including its joined category and payer profile. */
@@ -33,7 +41,16 @@ function splitLabel(expense: ExpenseWithRelations): string | null {
 /** Single swipeable expense row; tapping opens the detail sheet, swiping left reveals delete. */
 export function ExpenseRow({ expense, currentUserId, householdId, month, categories }: ExpenseRowProps) {
   const [detailOpen, setDetailOpen] = useState(false)
+  // Once the sheet has been opened we keep it mounted so its close transition
+  // can play; until then it's never loaded, so the chunk stays off the
+  // initial-render path.
+  const [detailMounted, setDetailMounted] = useState(false)
   const deleteExpense = useDeleteExpense()
+
+  const openDetail = () => {
+    setDetailMounted(true)
+    setDetailOpen(true)
+  }
 
   const { ref, offsetX, isRevealed } = useSwipeToDelete(() => {
     deleteExpense.mutate({ id: expense.id, householdId, month })
@@ -62,7 +79,7 @@ export function ExpenseRow({ expense, currentUserId, householdId, month, categor
       )}
       <Box
         ref={ref}
-        onClick={() => setDetailOpen(true)}
+        onClick={openDetail}
         sx={{
           display: 'flex',
           alignItems: 'center',
@@ -108,14 +125,18 @@ export function ExpenseRow({ expense, currentUserId, householdId, month, categor
         </Avatar>
       </Box>
 
-      <ExpenseDetailSheet
-        open={detailOpen}
-        onClose={() => setDetailOpen(false)}
-        expense={expense}
-        categories={categories}
-        householdId={householdId}
-        month={month}
-      />
+      {detailMounted && (
+        <Suspense fallback={null}>
+          <ExpenseDetailSheet
+            open={detailOpen}
+            onClose={() => setDetailOpen(false)}
+            expense={expense}
+            categories={categories}
+            householdId={householdId}
+            month={month}
+          />
+        </Suspense>
+      )}
     </Box>
   )
 }

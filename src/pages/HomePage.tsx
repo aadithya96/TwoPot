@@ -24,6 +24,7 @@ import { ExpenseRow } from '@/features/expenses/ExpenseRow'
 import { useBudgetUsage } from '@/features/budgets'
 import { GoalCard, useGoals } from '@/features/goals'
 import { useIsSettled, useSettlement } from '@/features/settlement/useSettlement'
+import { usePotConfig } from '@/features/pots/usePots'
 import { useCurrentUser } from '@/features/auth'
 import { SetupChecklist, type SetupStep } from '@/features/home/SetupChecklist'
 import { SETUP_DISMISSED_KEY } from '@/lib/storageKeys'
@@ -69,6 +70,12 @@ export function HomePage() {
   const { data: goals, isLoading: isGoalsLoading } = useGoals(householdId ?? undefined)
   const { data: settlement } = useSettlement(householdId ?? undefined, month)
   const { data: isSettled } = useIsSettled(householdId ?? undefined, month)
+  const { data: potConfig } = usePotConfig(householdId ?? undefined)
+
+  // Mirror PotsOverview's own visibility rule so we only reserve layout space
+  // (and load its chunk) when the card will actually render — reserving for the
+  // disabled-pots case would introduce a shift instead of removing one.
+  const showPots = Boolean(potConfig?.enabled && potConfig.members.length >= 2)
 
   useEffect(() => {
     if (searchParams.get('action') === 'add') {
@@ -210,8 +217,12 @@ export function HomePage() {
         </CardContent>
       </Card>
 
+      {/* These cards sit above the "Recent expenses" grid, so loading their
+          chunks/data after first paint used to push it down and dominate CLS.
+          Reserving an approximate card height in the fallback keeps the grid in
+          place while they hydrate. */}
       {householdId && hasSharedExpenses && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<Skeleton variant="rounded" height={180} />}>
           <SettlementCard
             settlement={settlement ?? null}
             members={members}
@@ -223,8 +234,8 @@ export function HomePage() {
         </Suspense>
       )}
 
-      {householdId && (
-        <Suspense fallback={null}>
+      {householdId && showPots && (
+        <Suspense fallback={<Skeleton variant="rounded" height={200} />}>
           <PotsOverview householdId={householdId} month={month} />
         </Suspense>
       )}
