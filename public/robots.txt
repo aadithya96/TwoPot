@@ -1,0 +1,3 @@
+# TwoPot is a private, login-gated app; allow crawling of the public shell only.
+User-agent: *
+Allow: /
