@@ -21,7 +21,7 @@ src/
   pages/        thin route-level wrappers (Home, Expenses, Budgets, Goals,
                 Insights, Settings, Notifications, Household)
 supabase/
-  migrations/   numbered SQL migrations (001–021)
+  migrations/   numbered SQL migrations (001–022)
   functions/    Deno edge functions: recurring-expenses, send-push,
                 scan-receipt, parse-expense, settlement-reminders
 k8s/            k3s manifests

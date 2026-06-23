@@ -538,6 +538,17 @@ export interface Database {
           net_amount: number
         }[]
       }
+      category_anomalies: {
+        Args: { p_household_id: string; p_month: string }
+        Returns: {
+          category_id: string
+          category_name: string
+          category_color: string
+          current_amount: number
+          avg_amount: number
+          ratio: number
+        }[]
+      }
     }
   }
 }

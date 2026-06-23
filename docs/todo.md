@@ -29,14 +29,18 @@ Working backlog of UI/UX and feature work. Items move from **Up next** →
 - [x] UPI settle-up deep links (`migration 021_upi_vpa`, `src/lib/upi.ts`) +
       `settlement-reminders` edge function
 - [x] Lighthouse pass — PWA icons, SEO meta, a11y landmarks
+- [x] Smart auto-categorization — suggests a category from the description,
+      preferring the household's own history over a merchant-keyword
+      fallback, as a tap-to-apply chip in the add-expense sheet
+- [x] Anomaly nudges — flags categories running 1.5×+ their trailing
+      3-month average on Insights (`migration 022_category_anomalies`)
 
 ---
 
 ## ▶️ Up next (recommended order)
 
-1. Smart auto-categorization (cheap win, reuses existing AI infra)
-2. Safe-to-spend / daily allowance (high-visibility Home widget)
-3. E2E test suite (Playwright) — biggest gap in current safety net
+1. Safe-to-spend / daily allowance (high-visibility Home widget)
+2. E2E test suite (Playwright) — biggest gap in current safety net
 
 ---
 
@@ -53,8 +57,6 @@ Working backlog of UI/UX and feature work. Items move from **Up next** →
 
 ## 🤖 Smart input (reuses Anthropic edge-function infra)
 
-- [ ] Smart auto-categorization — suggest a category from the description as
-      the user types, before they even open the picker
 - [ ] Bank/UPI SMS import — parse a transaction SMS (share-to-app or paste)
       into a draft expense
 - [ ] Voice quick-add — speech-to-text into the existing `parse-expense` flow
@@ -74,7 +76,6 @@ Working backlog of UI/UX and feature work. Items move from **Up next** →
 
 - [ ] Month-over-month comparison + spending calendar heatmap
 - [ ] "Your month in review" shareable recap card
-- [ ] Anomaly nudges ("Dining is 2× your usual this month")
 - [ ] Net worth / savings rate trend across pots + goals combined
 - [ ] Per-category drill-down (tap a slice → filtered expense list)
 
