@@ -39,7 +39,7 @@ export function ActivityFeed({ householdId }: ActivityFeedProps) {
           {recent.map((entry) => (
             <ListItem key={entry.id} divider>
               <ListItemAvatar>
-                <Avatar src={entry.actor?.avatar_url ?? undefined}>
+                <Avatar src={entry.actor?.avatar_url ?? undefined} alt={entry.actor?.display_name ?? ''}>
                   {entry.actor?.display_name?.[0] ?? '?'}
                 </Avatar>
               </ListItemAvatar>

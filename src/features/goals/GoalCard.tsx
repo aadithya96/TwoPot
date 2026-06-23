@@ -51,6 +51,7 @@ export function GoalCard({ goal, members }: GoalCardProps) {
               <LinearProgress
                 variant="determinate"
                 value={percent}
+                aria-label={`${goal.name} progress`}
                 sx={{ flex: 1, height: 8, borderRadius: 4 }}
               />
               <Typography variant="labelMedium" color="text.secondary">

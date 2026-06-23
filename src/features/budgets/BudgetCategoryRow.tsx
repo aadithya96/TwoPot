@@ -65,6 +65,7 @@ export function BudgetCategoryRow({ usage, householdId, categories }: BudgetCate
             <LinearProgress
               variant="determinate"
               value={Math.min(percent, 100)}
+              aria-label={`${usage.category_name} budget used`}
               sx={{
                 flex: 1,
                 height: 8,
