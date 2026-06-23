@@ -157,15 +157,34 @@ Each is only set if its GitHub secret is non-empty. `SUPABASE_URL` and
 them into functions automatically (and the `SUPABASE_` prefix is reserved).
 
 Without `ANTHROPIC_API_KEY`, receipts still upload and expenses can be entered
-manually — only the AI autofill is unavailable. Without the `VAPID_*` values,
-push notifications are disabled.
+manually — only the AI autofill (`scan-receipt`, `parse-expense`) is
+unavailable. Without the `VAPID_*` values, push notifications are disabled.
 
-Also schedule `recurring-expenses` to run daily via `pg_cron` or an external
-scheduler.
+## Edge functions deployed
 
-## CI/CD (`.github/workflows/deploy.yaml`)
+The workflow deploys all five Deno functions
+(`recurring-expenses`, `send-push`, `scan-receipt`, `parse-expense`,
+`settlement-reminders`). Two of them are meant to run on a schedule via
+`pg_cron` -> `pg_net` (or an external scheduler):
 
-On push to `main`:
+- `recurring-expenses` — monthly, on the 1st, to clone due recurring expenses.
+- `settlement-reminders` — periodically (weekly is sensible) to nudge whoever
+  owes on the current month's unsettled settlement.
+
+## CI/CD workflows
+
+Three workflows live in `.github/workflows/`:
+
+- **`ci.yaml`** — on every PR (skipped when only migrations/`config.toml`
+  change): `pnpm install --frozen-lockfile`, then `type-check`, `lint`, `test`
+  on Node 24.
+- **`migrations-check.yaml`** — on PRs touching `supabase/migrations/**` or
+  `config.toml`: runs `supabase db push --dry-run` to show pending schema
+  changes for review without applying them.
+- **`deploy.yaml`** — on push to `main`: the full build-and-deploy pipeline
+  described below.
+
+### `deploy.yaml` — on push to `main`
 
 1. **preflight** — validates that every required secret is set and aborts the
    run before any work if one is missing (optional secrets only emit a warning,
