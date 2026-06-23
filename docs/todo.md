@@ -45,7 +45,7 @@ below._
 
 - [x] Natural-language quick-add
 - [ ] Bank/UPI SMS import — parse a transaction SMS into an expense
-- [ ] Smart auto-categorization — suggest a category from the description
+- [x] Smart auto-categorization — suggest a category from the description
 
 ## 💸 Budgeting depth
 
@@ -58,7 +58,7 @@ below._
 
 - [ ] Month-over-month comparison + spending calendar heatmap
 - [ ] "Your month in review" shareable recap card
-- [ ] Anomaly nudges ("Dining is 2× your usual this month")
+- [x] Anomaly nudges ("Dining is 2× your usual this month")
 
 ## 🎯 Goals depth
 

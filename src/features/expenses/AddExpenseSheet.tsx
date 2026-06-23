@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
@@ -25,6 +25,8 @@ import { expenseSchema, type ExpenseFormValues } from './expenseSchema'
 import { useAddExpense, useUpdateExpense } from './useExpenses'
 import { useScanReceipt } from './useScanReceipt'
 import { useParseExpense } from './useParseExpense'
+import { useCategorySuggestionHistory } from './useCategorySuggestion'
+import { suggestCategory } from './categorySuggestion'
 import { ReceiptUploader } from './ReceiptUploader'
 import { useBackButton } from '@/hooks/useBackButton'
 import { useVisualViewport } from '@/hooks/useVisualViewport'
@@ -71,8 +73,10 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
   const updateExpense = useUpdateExpense()
   const scanReceipt = useScanReceipt()
   const parseExpense = useParseExpense()
+  const { data: suggestionHistory } = useCategorySuggestionHistory(householdId ?? undefined)
   const { enqueueSnackbar } = useSnackbar()
   const [quickText, setQuickText] = useState('')
+  const [debouncedDescription, setDebouncedDescription] = useState('')
 
   useBackButton(open, onClose)
 
@@ -82,6 +86,24 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
   })
 
   const owner = watch('owner')
+  const description = watch('description')
+  const categoryId = watch('categoryId')
+
+  // Debounce the description so the suggestion below doesn't recompute on every keystroke.
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedDescription(description ?? ''), 400)
+    return () => clearTimeout(timer)
+  }, [description])
+
+  // Suggest a category from the description once the user hasn't picked one — using the
+  // household's own history first, then a static keyword fallback. New expenses only,
+  // and never overrides a category the user already chose.
+  const suggestedCategory = useMemo(() => {
+    if (expenseId || categoryId) return null
+    if (debouncedDescription.trim().length < 3) return null
+    const suggestedId = suggestCategory(debouncedDescription, categories, suggestionHistory ?? [])
+    return categories.find((category) => category.id === suggestedId) ?? null
+  }, [expenseId, categoryId, debouncedDescription, categories, suggestionHistory])
   const { data: incomeSplit } = useIncomeSplit(householdId ?? undefined)
 
   // Default "who paid" to the current user for a new expense, so the form is
@@ -421,19 +443,31 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
             />
           </Collapse>
 
-          <Controller
-            name="description"
-            control={control}
-            render={({ field, fieldState }) => (
-              <TextField
-                {...field}
-                value={field.value ?? ''}
-                label="Description"
-                error={Boolean(fieldState.error)}
-                helperText={fieldState.error?.message}
+          <Stack spacing={1}>
+            <Controller
+              name="description"
+              control={control}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  value={field.value ?? ''}
+                  label="Description"
+                  error={Boolean(fieldState.error)}
+                  helperText={fieldState.error?.message}
+                />
+              )}
+            />
+            {suggestedCategory && (
+              <Chip
+                size="small"
+                icon={<AutoAwesomeIcon fontSize="small" />}
+                label={`Suggested category: ${suggestedCategory.name}`}
+                onClick={() => setValue('categoryId', suggestedCategory.id, { shouldValidate: true })}
+                variant="outlined"
+                sx={{ alignSelf: 'flex-start', borderColor: suggestedCategory.color }}
               />
             )}
-          />
+          </Stack>
 
           <Controller
             name="notes"

@@ -6,6 +6,8 @@ export const queryKeys = {
   incomeSplit: (householdId: string) => ['incomeSplit', householdId] as const,
   potConfig: (householdId: string) => ['potConfig', householdId] as const,
   categories: (householdId: string) => ['categories', householdId] as const,
+  categorySuggestionHistory: (householdId: string) =>
+    ['categorySuggestionHistory', householdId] as const,
   expenses: (householdId: string, month: string) => ['expenses', householdId, month] as const,
   expense: (expenseId: string) => ['expense', expenseId] as const,
   recurringExpenses: (householdId: string) => ['recurringExpenses', householdId] as const,
@@ -21,6 +23,8 @@ export const queryKeys = {
   monthlyByCategory: (householdId: string, month: string) =>
     ['monthlyByCategory', householdId, month] as const,
   monthlyTrend: (householdId: string) => ['monthlyTrend', householdId] as const,
+  categoryAnomalies: (householdId: string, month: string) =>
+    ['categoryAnomalies', householdId, month] as const,
   personContributions: (householdId: string, month: string) =>
     ['personContributions', householdId, month] as const,
   pushSubscription: (userId: string) => ['pushSubscription', userId] as const,

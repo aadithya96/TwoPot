@@ -4,11 +4,17 @@ import { useHouseholdStore } from '@/stores/householdStore'
 import { supabase } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
 import type { Expense } from '@/types/app'
-import { useMonthlyByCategory, useMonthlyTrend, usePersonContributions } from './useInsights'
+import {
+  useMonthlyByCategory,
+  useMonthlyTrend,
+  usePersonContributions,
+  useCategoryAnomalies,
+} from './useInsights'
 import { StatCards } from './StatCards'
 import { SpendByCategory } from './SpendByCategory'
 import { MonthlyTrend } from './MonthlyTrend'
 import { PersonContributions } from './PersonContributions'
+import { AnomalyNudges } from './AnomalyNudges'
 
 function currentMonth(): string {
   return new Date().toISOString().slice(0, 7)
@@ -42,6 +48,7 @@ export function InsightsPage() {
   const categoryQuery = useMonthlyByCategory(householdId ?? undefined, month)
   const trendQuery = useMonthlyTrend(householdId ?? undefined)
   const contributionsQuery = usePersonContributions(householdId ?? undefined, month)
+  const anomaliesQuery = useCategoryAnomalies(householdId ?? undefined, month)
 
   if (!householdId) {
     return (
@@ -54,6 +61,7 @@ export function InsightsPage() {
   return (
     <Stack spacing={3} sx={{ p: 2 }}>
       <StatCards expenses={expensesQuery.data ?? []} />
+      <AnomalyNudges data={anomaliesQuery.data ?? []} />
       <SpendByCategory data={categoryQuery.data ?? []} />
       <MonthlyTrend data={trendQuery.data ?? []} />
       <PersonContributions data={contributionsQuery.data ?? []} members={members} />
