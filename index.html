@@ -19,54 +19,135 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <title>TwoPot</title>
     <style>
-      /* Inline app-shell splash: paints branded content immediately from the
-         HTML so First Contentful Paint no longer waits for the ~700KB of app
-         JS to download and execute on mobile. React clears #root on mount,
-         which removes the splash. The centered layout mirrors the app's own
-         first loading state (AuthGuard's spinner) to avoid a layout shift. */
+      /* Inline app-shell skeleton: paints a stable, branded layout straight from
+         the HTML so First Contentful Paint no longer waits on the ~700KB of app
+         JS, and so the layout does not reflow as React hydrates. It mirrors the
+         React <AppShellSkeleton> the app renders while data loads, which in turn
+         mirrors the real dashboard — keeping the hand-off (HTML → React skeleton
+         → content) seamless. React clears #root on mount, removing this. */
       #app-splash {
         position: fixed;
         inset: 0;
         display: flex;
         flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 20px;
         background: #fffbfe;
-        color: #6750a4;
+        color: #1c1b1f;
         font-family: 'Roboto', system-ui, -apple-system, sans-serif;
       }
-      #app-splash .splash-wordmark {
-        font-size: 34px;
-        font-weight: 600;
-        letter-spacing: -0.5px;
+      #app-splash .sp-appbar {
+        flex-shrink: 0;
+        background: #6750a4;
+        height: calc(56px + env(safe-area-inset-top));
+        padding: env(safe-area-inset-top) 16px 0;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        box-sizing: border-box;
       }
-      #app-splash .splash-spinner {
-        width: 36px;
-        height: 36px;
+      #app-splash .sp-content {
+        flex: 1;
+        overflow: hidden;
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        box-sizing: border-box;
+      }
+      #app-splash .sp-card {
+        background: #fffbfe;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+      }
+      #app-splash .sp-chips {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+      }
+      #app-splash .sp-heading {
+        font-size: 16px;
+        font-weight: 500;
+        line-height: 24px;
+      }
+      #app-splash .sp-rows {
+        margin-top: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      #app-splash .sp-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 12px 16px;
+      }
+      #app-splash .sp-row-main {
+        flex: 1;
+      }
+      #app-splash .sp-bottomnav {
+        flex-shrink: 0;
+        height: calc(80px + env(safe-area-inset-bottom));
+        padding-bottom: env(safe-area-inset-bottom);
+        border-top: 1px solid rgba(0, 0, 0, 0.12);
+        background: #fffbfe;
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+      }
+      #app-splash .sp-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+      }
+      #app-splash .sk {
+        background: rgba(0, 0, 0, 0.11);
+        border-radius: 4px;
+        animation: sp-pulse 1.5s ease-in-out infinite;
+      }
+      #app-splash .sk-circ {
         border-radius: 50%;
-        border: 3px solid rgba(103, 80, 164, 0.25);
-        border-top-color: #6750a4;
-        animation: app-splash-spin 0.8s linear infinite;
       }
-      @keyframes app-splash-spin {
-        to {
-          transform: rotate(360deg);
+      #app-splash .sp-avatar {
+        background: rgba(255, 255, 255, 0.3);
+      }
+      @keyframes sp-pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.4;
         }
       }
       @media (prefers-color-scheme: dark) {
         #app-splash {
           background: #1c1b1f;
-          color: #cfbcff;
+          color: #e6e1e5;
         }
-        #app-splash .splash-spinner {
-          border-color: rgba(207, 188, 255, 0.25);
-          border-top-color: #cfbcff;
+        #app-splash .sp-appbar {
+          background: #21005d;
+        }
+        #app-splash .sp-card {
+          background: #1c1b1f;
+          border-color: rgba(255, 255, 255, 0.12);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+        }
+        #app-splash .sp-bottomnav {
+          background: #1c1b1f;
+          border-top-color: rgba(255, 255, 255, 0.12);
+        }
+        #app-splash .sk {
+          background: rgba(255, 255, 255, 0.13);
         }
       }
       @media (prefers-reduced-motion: reduce) {
-        #app-splash .splash-spinner {
-          animation-duration: 1.6s;
+        #app-splash .sk {
+          animation-duration: 3s;
         }
       }
     </style>
@@ -74,8 +155,69 @@
   <body>
     <div id="root">
       <div id="app-splash">
-        <div class="splash-wordmark">TwoPot</div>
-        <div class="splash-spinner" role="progressbar" aria-label="Loading TwoPot"></div>
+        <div class="sp-appbar">
+          <div class="sk sk-circ sp-avatar" style="width: 32px; height: 32px"></div>
+        </div>
+        <div class="sp-content">
+          <div class="sp-card">
+            <div class="sk" style="width: 120px; height: 20px"></div>
+            <div class="sk" style="width: 160px; height: 44px; margin-top: 4px"></div>
+            <div class="sk" style="width: 100%; height: 8px; margin-top: 12px"></div>
+            <div class="sp-chips">
+              <div class="sk" style="width: 92px; height: 32px; border-radius: 16px"></div>
+              <div class="sk" style="width: 92px; height: 32px; border-radius: 16px"></div>
+            </div>
+          </div>
+          <div class="sk" style="width: 100%; height: 200px; border-radius: 12px"></div>
+          <div class="sk" style="width: 100%; height: 240px; border-radius: 12px"></div>
+          <div>
+            <div class="sp-heading">Recent expenses</div>
+            <div class="sp-rows">
+              <div class="sp-row">
+                <div class="sk sk-circ" style="width: 40px; height: 40px"></div>
+                <div class="sp-row-main">
+                  <div class="sk" style="width: 60%; height: 20px"></div>
+                  <div class="sk" style="width: 40%; height: 16px; margin-top: 6px"></div>
+                </div>
+                <div class="sk" style="width: 56px; height: 24px"></div>
+              </div>
+              <div class="sp-row">
+                <div class="sk sk-circ" style="width: 40px; height: 40px"></div>
+                <div class="sp-row-main">
+                  <div class="sk" style="width: 60%; height: 20px"></div>
+                  <div class="sk" style="width: 40%; height: 16px; margin-top: 6px"></div>
+                </div>
+                <div class="sk" style="width: 56px; height: 24px"></div>
+              </div>
+              <div class="sp-row">
+                <div class="sk sk-circ" style="width: 40px; height: 40px"></div>
+                <div class="sp-row-main">
+                  <div class="sk" style="width: 60%; height: 20px"></div>
+                  <div class="sk" style="width: 40%; height: 16px; margin-top: 6px"></div>
+                </div>
+                <div class="sk" style="width: 56px; height: 24px"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="sp-bottomnav">
+          <div class="sp-nav-item">
+            <div class="sk sk-circ" style="width: 24px; height: 24px"></div>
+            <div class="sk" style="width: 36px; height: 12px"></div>
+          </div>
+          <div class="sp-nav-item">
+            <div class="sk sk-circ" style="width: 24px; height: 24px"></div>
+            <div class="sk" style="width: 36px; height: 12px"></div>
+          </div>
+          <div class="sp-nav-item">
+            <div class="sk sk-circ" style="width: 24px; height: 24px"></div>
+            <div class="sk" style="width: 36px; height: 12px"></div>
+          </div>
+          <div class="sp-nav-item">
+            <div class="sk sk-circ" style="width: 24px; height: 24px"></div>
+            <div class="sk" style="width: 36px; height: 12px"></div>
+          </div>
+        </div>
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>

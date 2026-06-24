@@ -1,6 +1,6 @@
-import { Box, CircularProgress } from '@mui/material'
 import { Navigate } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
+import { AppShellSkeleton } from '@/components/layout/AppShellSkeleton'
 import { RealtimeProvider } from '@/components/RealtimeProvider'
 import { signOut, useCurrentUser, useSession } from './useAuth'
 import { useHousehold } from './useHousehold'
@@ -17,18 +17,7 @@ export function AuthGuard() {
   const { data: profile } = useCurrentUser()
 
   if (isSessionLoading || (session && isHouseholdLoading)) {
-    return (
-      <Box
-        sx={{
-          height: '100dvh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    )
+    return <AppShellSkeleton />
   }
 
   if (!session) {
