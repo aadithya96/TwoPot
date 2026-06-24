@@ -76,7 +76,7 @@ export function HomePage() {
     householdId ?? undefined,
     month
   )
-  const { data: potConfig } = usePotConfig(householdId ?? undefined)
+  const { data: potConfig, isLoading: isPotConfigLoading } = usePotConfig(householdId ?? undefined)
 
   // Mirror PotsOverview's own visibility rule so we only reserve layout space
   // (and load its chunk) when the card will actually render — reserving for the
@@ -223,33 +223,49 @@ export function HomePage() {
         </CardContent>
       </Card>
 
-      {/* These cards sit above the "Recent expenses" grid, so loading their
-          chunks/data after first paint pushes it down and dominates CLS. We
-          hold a reserved-height skeleton until BOTH the chunk and the card's
-          data are ready, so the card renders once at its final height instead
-          of rendering a short pending state and then jumping when data lands. */}
-      {householdId && hasSharedExpenses && (
-        <Suspense fallback={<Skeleton variant="rounded" height={200} />}>
-          {isSettlementLoading || isSettledLoading ? (
-            <Skeleton variant="rounded" height={200} />
-          ) : (
-            <SettlementCard
-              settlement={settlement ?? null}
-              members={members}
-              householdId={householdId}
-              periodMonth={month}
-              isSettled={isSettled ?? false}
-              currentUserId={currentUser?.id}
-            />
-          )}
-        </Suspense>
-      )}
+      {/* The settlement and two-pots cards sit above the "Recent expenses" grid,
+          so when they appear after their data loads they push the grid down and
+          dominate CLS. We reserve their slots from the first render — while the
+          gating query (expenses / pot config) is still loading — and hold the
+          reserved height until the card's own data is ready, so the card drops
+          in at its final height without moving the grid. The same slots are
+          reserved in <AppShellSkeleton>, so the layout is stable from the
+          initial HTML all the way through to loaded content. Trade-off: a
+          household with no shared expenses or with pots disabled briefly shows a
+          reserved slot that then collapses — acceptable for an app where shared
+          expenses and pots are the primary, near-universal cases. */}
+      {householdId &&
+        (isExpensesLoading ? (
+          <Skeleton variant="rounded" height={200} />
+        ) : (
+          hasSharedExpenses && (
+            <Suspense fallback={<Skeleton variant="rounded" height={200} />}>
+              {isSettlementLoading || isSettledLoading ? (
+                <Skeleton variant="rounded" height={200} />
+              ) : (
+                <SettlementCard
+                  settlement={settlement ?? null}
+                  members={members}
+                  householdId={householdId}
+                  periodMonth={month}
+                  isSettled={isSettled ?? false}
+                  currentUserId={currentUser?.id}
+                />
+              )}
+            </Suspense>
+          )
+        ))}
 
-      {householdId && showPots && (
-        <Suspense fallback={<Skeleton variant="rounded" height={240} />}>
-          <PotsOverview householdId={householdId} month={month} />
-        </Suspense>
-      )}
+      {householdId &&
+        (isPotConfigLoading ? (
+          <Skeleton variant="rounded" height={240} />
+        ) : (
+          showPots && (
+            <Suspense fallback={<Skeleton variant="rounded" height={240} />}>
+              <PotsOverview householdId={householdId} month={month} />
+            </Suspense>
+          )
+        ))}
 
       {budgetAlerts.length > 0 && (
         <Stack spacing={1}>
