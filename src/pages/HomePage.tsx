@@ -68,8 +68,14 @@ export function HomePage() {
   const { data: budgetUsage } = useBudgetUsage(householdId ?? undefined)
   const { data: categories } = useCategories(householdId ?? undefined)
   const { data: goals, isLoading: isGoalsLoading } = useGoals(householdId ?? undefined)
-  const { data: settlement } = useSettlement(householdId ?? undefined, month)
-  const { data: isSettled } = useIsSettled(householdId ?? undefined, month)
+  const { data: settlement, isLoading: isSettlementLoading } = useSettlement(
+    householdId ?? undefined,
+    month
+  )
+  const { data: isSettled, isLoading: isSettledLoading } = useIsSettled(
+    householdId ?? undefined,
+    month
+  )
   const { data: potConfig } = usePotConfig(householdId ?? undefined)
 
   // Mirror PotsOverview's own visibility rule so we only reserve layout space
@@ -218,24 +224,29 @@ export function HomePage() {
       </Card>
 
       {/* These cards sit above the "Recent expenses" grid, so loading their
-          chunks/data after first paint used to push it down and dominate CLS.
-          Reserving an approximate card height in the fallback keeps the grid in
-          place while they hydrate. */}
+          chunks/data after first paint pushes it down and dominates CLS. We
+          hold a reserved-height skeleton until BOTH the chunk and the card's
+          data are ready, so the card renders once at its final height instead
+          of rendering a short pending state and then jumping when data lands. */}
       {householdId && hasSharedExpenses && (
-        <Suspense fallback={<Skeleton variant="rounded" height={180} />}>
-          <SettlementCard
-            settlement={settlement ?? null}
-            members={members}
-            householdId={householdId}
-            periodMonth={month}
-            isSettled={isSettled ?? false}
-            currentUserId={currentUser?.id}
-          />
+        <Suspense fallback={<Skeleton variant="rounded" height={200} />}>
+          {isSettlementLoading || isSettledLoading ? (
+            <Skeleton variant="rounded" height={200} />
+          ) : (
+            <SettlementCard
+              settlement={settlement ?? null}
+              members={members}
+              householdId={householdId}
+              periodMonth={month}
+              isSettled={isSettled ?? false}
+              currentUserId={currentUser?.id}
+            />
+          )}
         </Suspense>
       )}
 
       {householdId && showPots && (
-        <Suspense fallback={<Skeleton variant="rounded" height={200} />}>
+        <Suspense fallback={<Skeleton variant="rounded" height={240} />}>
           <PotsOverview householdId={householdId} month={month} />
         </Suspense>
       )}

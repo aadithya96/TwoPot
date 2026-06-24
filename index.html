@@ -9,7 +9,6 @@
       name="description"
       content="TwoPot is a household expense tracker for two people — split shared costs fairly, track two pots of income, and settle up over UPI."
     />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
     <!-- Apple PWA meta tags -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -19,9 +18,66 @@
 
     <link rel="manifest" href="/manifest.webmanifest" />
     <title>TwoPot</title>
+    <style>
+      /* Inline app-shell splash: paints branded content immediately from the
+         HTML so First Contentful Paint no longer waits for the ~700KB of app
+         JS to download and execute on mobile. React clears #root on mount,
+         which removes the splash. The centered layout mirrors the app's own
+         first loading state (AuthGuard's spinner) to avoid a layout shift. */
+      #app-splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        background: #fffbfe;
+        color: #6750a4;
+        font-family: 'Roboto', system-ui, -apple-system, sans-serif;
+      }
+      #app-splash .splash-wordmark {
+        font-size: 34px;
+        font-weight: 600;
+        letter-spacing: -0.5px;
+      }
+      #app-splash .splash-spinner {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 3px solid rgba(103, 80, 164, 0.25);
+        border-top-color: #6750a4;
+        animation: app-splash-spin 0.8s linear infinite;
+      }
+      @keyframes app-splash-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-color-scheme: dark) {
+        #app-splash {
+          background: #1c1b1f;
+          color: #cfbcff;
+        }
+        #app-splash .splash-spinner {
+          border-color: rgba(207, 188, 255, 0.25);
+          border-top-color: #cfbcff;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #app-splash .splash-spinner {
+          animation-duration: 1.6s;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="app-splash">
+        <div class="splash-wordmark">TwoPot</div>
+        <div class="splash-spinner" role="progressbar" aria-label="Loading TwoPot"></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
