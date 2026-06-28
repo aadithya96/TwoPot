@@ -4,7 +4,15 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 
 /** Tables that broadcast realtime Postgres changes scoped to a household. */
-const REALTIME_TABLES = ['expenses', 'budgets', 'savings_goals', 'settlements', 'audit_log'] as const
+const REALTIME_TABLES = [
+  'expenses',
+  'budgets',
+  'savings_goals',
+  'movies',
+  'movie_ratings',
+  'settlements',
+  'audit_log',
+] as const
 
 const RealtimeContext = createContext<null>(null)
 
@@ -74,6 +82,9 @@ function affectedQueryPrefixes(table: (typeof REALTIME_TABLES)[number]): readonl
       return ['budgetUsage']
     case 'savings_goals':
       return ['goals']
+    case 'movies':
+    case 'movie_ratings':
+      return ['movies']
     case 'settlements':
       return ['settlement', 'balanceTrend']
     case 'audit_log':

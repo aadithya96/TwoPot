@@ -316,6 +316,97 @@ export interface Database {
           },
         ]
       }
+      movies: {
+        Row: {
+          id: string
+          household_id: string
+          tmdb_id: number
+          title: string
+          poster_path: string | null
+          release_year: number | null
+          overview: string | null
+          genres: string[]
+          added_by: string | null
+          status: string
+          watched_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          household_id: string
+          tmdb_id: number
+          title: string
+          poster_path?: string | null
+          release_year?: number | null
+          overview?: string | null
+          genres?: string[]
+          added_by?: string | null
+          status?: string
+          watched_at?: string | null
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['movies']['Insert']>
+        Relationships: [
+          {
+            foreignKeyName: 'movies_household_id_fkey'
+            columns: ['household_id']
+            isOneToOne: false
+            referencedRelation: 'households'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'movies_added_by_fkey'
+            columns: ['added_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      movie_ratings: {
+        Row: {
+          id: string
+          movie_id: string
+          household_id: string
+          user_id: string
+          rating: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          movie_id: string
+          household_id: string
+          user_id: string
+          rating: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['movie_ratings']['Insert']>
+        Relationships: [
+          {
+            foreignKeyName: 'movie_ratings_movie_id_fkey'
+            columns: ['movie_id']
+            isOneToOne: false
+            referencedRelation: 'movies'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'movie_ratings_household_id_fkey'
+            columns: ['household_id']
+            isOneToOne: false
+            referencedRelation: 'households'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'movie_ratings_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       settlements: {
         Row: {
           id: string

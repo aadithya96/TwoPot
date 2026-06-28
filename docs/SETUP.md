@@ -53,16 +53,23 @@ link`) and isn't relevant to local-only dev.
 
 ## Edge functions (optional, local)
 
-Smart input (`scan-receipt`, `parse-expense`) and push (`send-push`,
-`settlement-reminders`) run as Deno edge functions. To run them locally:
+Smart input (`scan-receipt`, `parse-expense`), movies (`tmdb`,
+`recommend-movies`) and push (`send-push`, `settlement-reminders`) run as Deno
+edge functions. To run them locally:
 
 ```bash
 supabase functions serve
-# set ANTHROPIC_API_KEY (smart input) and VAPID_* (push) in supabase/.env
+# set ANTHROPIC_API_KEY (smart input + movie recommendations),
+# TMDB_API_KEY (movie search + recommendations) and VAPID_* (push) in supabase/.env
 ```
 
+`TMDB_API_KEY` is a free v3 API key from
+[themoviedb.org/settings/api](https://www.themoviedb.org/settings/api); it
+powers movie search and the recommendation engine and is kept server-side.
+
 The app works without them — receipts still upload and expenses can be entered
-manually; only AI autofill and push are unavailable.
+manually; only AI autofill, movie search/recommendations, and push are
+unavailable.
 
 ## Run the dev server
 

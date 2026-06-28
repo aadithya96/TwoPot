@@ -25,6 +25,9 @@ k3s.
   contributions, stat cards, and a partner balance-over-time trend
 - **Smart input** powered by Anthropic edge functions — natural-language
   quick-add ("250 groceries yesterday") and receipt OCR autofill
+- **Movies** — a shared watchlist with TMDB search, per-person star ratings and
+  a to-watch / watched flow, plus a hybrid TMDB + Claude recommendation engine
+  that suggests films both partners will enjoy
 - **Custom categories** — add / edit / delete categories (name, icon, colour)
 - **Household management** — invite codes, member income, remove / leave
   household, and an activity (audit) log of who did what
