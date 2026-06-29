@@ -34,7 +34,12 @@ test('an expense added by one partner appears for the other without a manual ref
     await form.getByLabel('Description').fill('Realtime sync check')
     await form.getByRole('button', { name: 'Add expense' }).click()
 
-    await expect(partnerPage.getByText('Realtime sync check')).toBeVisible({ timeout: 15_000 })
+    // Match the expense list item exactly: a loose getByText also matches the
+    // activity-feed entry ("… added expense \"realtime sync check\""), which
+    // likewise syncs in realtime, tripping Playwright's strict-mode check.
+    await expect(partnerPage.getByText('Realtime sync check', { exact: true })).toBeVisible({
+      timeout: 15_000,
+    })
   } finally {
     await ownerContext.close()
     await partnerContext.close()
