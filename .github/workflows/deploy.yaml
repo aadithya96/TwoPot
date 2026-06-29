@@ -24,6 +24,7 @@ jobs:
       TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
       VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
       VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
       VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
       GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
@@ -48,6 +49,7 @@ jobs:
           # Optional: feature degrades gracefully if absent.
           warn VITE_VAPID_PUBLIC_KEY  "$VITE_VAPID_PUBLIC_KEY"  "web push subscription disabled in the frontend"
           warn ANTHROPIC_API_KEY      "$ANTHROPIC_API_KEY"      "AI receipt scan / quick-add autofill disabled"
+          warn TMDB_API_KEY           "$TMDB_API_KEY"           "movie search / recommendations disabled"
           warn VAPID_SUBJECT          "$VAPID_SUBJECT"          "push sending (send-push) disabled"
           warn VAPID_PRIVATE_KEY      "$VAPID_PRIVATE_KEY"      "push sending (send-push) disabled"
           warn GHCR_PULL_TOKEN        "$GHCR_PULL_TOKEN"        "image pulls fall back to the ephemeral GITHUB_TOKEN"
@@ -208,7 +210,7 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         run: |
-          for fn in recurring-expenses send-push scan-receipt parse-expense settlement-reminders; do
+          for fn in recurring-expenses send-push scan-receipt parse-expense settlement-reminders tmdb recommend-movies; do
             supabase functions deploy "$fn" --project-ref "$SUPABASE_PROJECT_REF"
           done
 
@@ -218,6 +220,7 @@ jobs:
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           ANTHROPIC_MODEL: ${{ secrets.ANTHROPIC_MODEL }}
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
           VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
           VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
@@ -229,6 +232,7 @@ jobs:
           args=()
           [ -n "${ANTHROPIC_API_KEY:-}" ] && args+=("ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}")
           [ -n "${ANTHROPIC_MODEL:-}" ]   && args+=("ANTHROPIC_MODEL=${ANTHROPIC_MODEL}")
+          [ -n "${TMDB_API_KEY:-}" ]      && args+=("TMDB_API_KEY=${TMDB_API_KEY}")
           [ -n "${VAPID_SUBJECT:-}" ]     && args+=("VAPID_SUBJECT=${VAPID_SUBJECT}")
           [ -n "${VAPID_PUBLIC_KEY:-}" ]  && args+=("VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}")
           [ -n "${VAPID_PRIVATE_KEY:-}" ] && args+=("VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}")
