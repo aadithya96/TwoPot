@@ -30,13 +30,12 @@ jobs:
 
       - uses: supabase/setup-cli@v2.1.1
         with:
-          # Pin an explicit version: `latest` resolves the newest release via an
-          # unauthenticated GitHub API call that is easily rate-limited on CI
-          # ("Failed to resolve latest Supabase CLI release"). A fixed version is
-          # downloaded directly and skips that lookup entirely.
-          version: 2.108.0
-        env:
-          SUPABASE_CLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          version: latest
+          # Authenticate the "resolve latest release" GitHub API call. Unauthenticated
+          # it hits the 60/hr shared-IP limit ("Failed to resolve latest Supabase CLI
+          # release"). This action version reads the `github-token` INPUT — passing the
+          # token as a SUPABASE_CLI_GITHUB_TOKEN env var (as before) is silently ignored.
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Start local Supabase (applies migrations automatically)
         run: supabase start

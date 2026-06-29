@@ -18,9 +18,11 @@ jobs:
 
       - uses: supabase/setup-cli@v2.1.1
         with:
-          # Pin an explicit version rather than `latest`, whose release lookup
-          # is an unauthenticated GitHub API call that gets rate-limited on CI.
-          version: 2.108.0
+          version: latest
+          # Authenticate the latest-release lookup so it doesn't hit the 60/hr
+          # unauthenticated GitHub API limit on shared CI IPs. The action reads
+          # the `github-token` input.
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Show pending migrations (dry run)
         run: |
