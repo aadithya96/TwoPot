@@ -34,6 +34,11 @@ Working backlog of UI/UX and feature work. Items move from **Up next** →
       fallback, as a tap-to-apply chip in the add-expense sheet
 - [x] Anomaly nudges — flags categories running 1.5×+ their trailing
       3-month average on Insights (`migration 022_category_anomalies`)
+- [x] Movies — shared watchlist with TMDB search (`tmdb` edge function),
+      per-person 1–5 star ratings and a to-watch/watched flow, plus a hybrid
+      TMDB + Claude recommendation engine (`recommend-movies` edge function)
+      that ranks a TMDB candidate pool for both partners' tastes
+      (`migration 025_movies`)
 
 ---
 

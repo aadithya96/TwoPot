@@ -9,6 +9,8 @@ import PieChartIcon from '@mui/icons-material/PieChart'
 import PieChartOutlineIcon from '@mui/icons-material/PieChartOutlined'
 import TrackChangesIcon from '@mui/icons-material/TrackChanges'
 import TrackChangesOutlinedIcon from '@mui/icons-material/TrackChangesOutlined'
+import MovieIcon from '@mui/icons-material/Movie'
+import MovieOutlinedIcon from '@mui/icons-material/MovieOutlined'
 
 const TABS = [
   { label: 'Home', path: '/', Icon: HomeOutlinedIcon, ActiveIcon: HomeIcon },
@@ -20,6 +22,7 @@ const TABS = [
     Icon: TrackChangesOutlinedIcon,
     ActiveIcon: TrackChangesIcon,
   },
+  { label: 'Movies', path: '/movies', Icon: MovieOutlinedIcon, ActiveIcon: MovieIcon },
 ] as const
 
 /** Fixed bottom tab bar for the four root routes, synced with the router location. */

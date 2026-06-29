@@ -91,12 +91,10 @@ jobs:
       - uses: supabase/setup-cli@v2
         with:
           version: latest
-        env:
-          # Authenticate the action's GitHub Releases lookup so resolving
-          # `latest` doesn't hit the 60/hr unauthenticated rate limit on the
-          # shared runner IP. This action reads SUPABASE_CLI_GITHUB_TOKEN
-          # (not the standard GITHUB_TOKEN).
-          SUPABASE_CLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Authenticate the latest-release lookup to avoid the 60/hr unauthenticated
+          # GitHub API limit on shared runner IPs. The action reads this `github-token`
+          # input; the old SUPABASE_CLI_GITHUB_TOKEN env var was silently ignored.
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Apply database migrations
         run: |
@@ -201,10 +199,9 @@ jobs:
         uses: supabase/setup-cli@v2
         with:
           version: latest
-        env:
-          # See the migrate job: authenticate the release lookup to avoid the
-          # unauthenticated GitHub API rate limit.
-          SUPABASE_CLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # See the migrate job: authenticate the latest-release lookup via the
+          # `github-token` input to avoid the unauthenticated GitHub API limit.
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy Supabase Edge Functions
         env:

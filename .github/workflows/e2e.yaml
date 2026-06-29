@@ -31,8 +31,11 @@ jobs:
       - uses: supabase/setup-cli@v2.1.1
         with:
           version: latest
-        env:
-          SUPABASE_CLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Authenticate the "resolve latest release" GitHub API call. Unauthenticated
+          # it hits the 60/hr shared-IP limit ("Failed to resolve latest Supabase CLI
+          # release"). This action version reads the `github-token` INPUT — passing the
+          # token as a SUPABASE_CLI_GITHUB_TOKEN env var (as before) is silently ignored.
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Start local Supabase (applies migrations automatically)
         run: supabase start
