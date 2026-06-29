@@ -20,6 +20,14 @@ test('an expense added by one partner appears for the other without a manual ref
     await ownerPage.goto('/')
     await partnerPage.goto('/')
 
+    // Wait for both dashboards to finish loading before writing. `postgres_changes`
+    // only delivers events that occur after a channel is subscribed, so the
+    // partner's RealtimeProvider must be mounted (its dashboard rendered) before
+    // the owner adds the expense — otherwise the INSERT can race ahead of the
+    // subscription and never reach the partner.
+    await expect(ownerPage.getByRole('button', { name: 'Add expense' })).toBeVisible()
+    await expect(partnerPage.getByRole('button', { name: 'Add expense' })).toBeVisible()
+
     await ownerPage.getByRole('button', { name: 'Add expense' }).click()
     const form = ownerPage.locator('form')
     await form.getByLabel('Amount').fill('99')
