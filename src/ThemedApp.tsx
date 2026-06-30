@@ -5,6 +5,7 @@ import { SnackbarProvider } from 'notistack'
 import { theme, darkTheme } from '@/lib/theme'
 import { useUiStore } from '@/stores/uiStore'
 import { router } from './App'
+import { UpdatePrompt } from '@/components/UpdatePrompt'
 
 /** Applies the light/dark MUI theme based on the UI store's `darkMode` flag. */
 export function ThemedApp() {
@@ -16,6 +17,7 @@ export function ThemedApp() {
           dark-appropriate defaults instead of black-on-dark text. */}
       <CssBaseline enableColorScheme />
       <SnackbarProvider maxSnack={3} autoHideDuration={4000}>
+        <UpdatePrompt />
         <RouterProvider router={router} />
       </SnackbarProvider>
     </ThemeProvider>
