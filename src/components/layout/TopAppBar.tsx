@@ -142,7 +142,7 @@ export function TopAppBar({ title, avatarUrl, displayName, onSignOut }: TopAppBa
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         sx={{ display: { xs: 'block', md: 'none' } }}
-        PaperProps={{ sx: { width: 280 } }}
+        slotProps={{ paper: { sx: { width: 280 } } }}
       >
         <Box sx={{ px: 3, py: 2.5 }}>
           <Typography variant="titleLarge" component="span" sx={{ color: 'primary.main', fontWeight: 600 }}>
