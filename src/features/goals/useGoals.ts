@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tan
 import { supabase } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
 import type { GoalContribution, SavingsGoal } from '@/types/app'
+import { computeMfMarketValue } from './backing'
 
 /** Fetches all savings goals for a household, most recently created first. */
 export function useGoals(householdId: string | undefined): UseQueryResult<SavingsGoal[]> {
@@ -21,6 +22,22 @@ export function useGoals(householdId: string | undefined): UseQueryResult<Saving
   })
 }
 
+/** How a new goal is backed (see backing.ts / migration 026). */
+export type CreateGoalBacking =
+  | { type: 'manual' }
+  | { type: 'bank_account'; bankLabel: string; upiVpa: string }
+  | {
+      type: 'mutual_fund'
+      schemeCode: number
+      schemeName: string
+      /** Units already held, if the fund pre-exists the goal. */
+      units: number
+      /** Latest NAV in rupees, when it could be fetched at creation time. */
+      nav: number | null
+      /** ISO date of that NAV. */
+      navDate: string | null
+    }
+
 /** Input for creating a new savings goal. */
 export interface CreateGoalInput {
   householdId: string
@@ -29,6 +46,7 @@ export interface CreateGoalInput {
   color: string
   targetAmount: number
   deadline: string | null
+  backing: CreateGoalBacking
 }
 
 /** Creates a new savings goal for the household, invalidating the household's goals list on success. */
@@ -37,6 +55,7 @@ export function useCreateGoal() {
 
   return useMutation({
     mutationFn: async (input: CreateGoalInput): Promise<SavingsGoal> => {
+      const { backing } = input
       const { data, error } = await supabase
         .from('savings_goals')
         .insert({
@@ -46,6 +65,21 @@ export function useCreateGoal() {
           color: input.color,
           target_amount: input.targetAmount,
           deadline: input.deadline,
+          backing_type: backing.type,
+          ...(backing.type === 'bank_account' && {
+            backing_bank_label: backing.bankLabel,
+            backing_upi_vpa: backing.upiVpa,
+          }),
+          ...(backing.type === 'mutual_fund' && {
+            backing_mf_scheme_code: backing.schemeCode,
+            backing_mf_scheme_name: backing.schemeName,
+            backing_mf_units: backing.units,
+            backing_mf_nav: backing.nav,
+            backing_mf_nav_date: backing.navDate,
+            backing_mf_refreshed_at: backing.nav !== null ? new Date().toISOString() : null,
+            // Pre-existing units are already worth something at the latest NAV.
+            current_amount: backing.nav !== null ? computeMfMarketValue(backing.units, backing.nav) : 0,
+          }),
         })
         .select('*')
         .single()
@@ -65,12 +99,19 @@ export interface ContributeInput {
   userId: string
   amount: number
   note: string | null
+  /**
+   * For mutual-fund-backed goals: units this contribution bought. When set, the goal's value is
+   * bumped by units (via `increment_goal_mf_units`) instead of by the raw amount, so it keeps
+   * tracking market value.
+   */
+  mfUnits?: number
 }
 
 /**
  * Records a contribution towards a goal: inserts a `goal_contributions` row and bumps the goal's
- * `current_amount` via the `increment_goal_amount` RPC. Invalidates the goal's contribution history
- * and the household's goals list (since `current_amount` changed).
+ * `current_amount` via the `increment_goal_amount` RPC (or `increment_goal_mf_units` for
+ * mutual-fund-backed goals). Invalidates the goal's contribution history and the household's goals
+ * list (since `current_amount` changed).
  */
 export function useContribute() {
   const queryClient = useQueryClient()
@@ -89,10 +130,16 @@ export function useContribute() {
         .single()
       if (error) throw error
 
-      const { error: incrementError } = await supabase.rpc('increment_goal_amount', {
-        goal_id: input.goalId,
-        delta: input.amount,
-      })
+      const { error: incrementError } =
+        input.mfUnits !== undefined
+          ? await supabase.rpc('increment_goal_mf_units', {
+              goal_id: input.goalId,
+              delta_units: input.mfUnits,
+            })
+          : await supabase.rpc('increment_goal_amount', {
+              goal_id: input.goalId,
+              delta: input.amount,
+            })
       if (incrementError) throw incrementError
 
       return data

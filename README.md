@@ -18,7 +18,10 @@ k3s.
 - **Income-based fair splitting** — shared expenses default to each partner's
   income ratio when enabled
 - **Category budgets** with rollover and 80% / 100% alerts
-- **Savings goals** with a contribution ledger and projected completion dates
+- **Savings goals** with a contribution ledger and projected completion dates,
+  optionally backed by a bank account / UPI ID (contributions deep-link into
+  your UPI app to transfer to e.g. a joint account) or by a mutual fund scheme
+  (goal value tracks units × NAV, refreshed hourly from AMFI data)
 - **Monthly settlement** between partners, settlement history, UPI settle-up
   deep links, and weekly settlement reminders
 - **Insights & charts** — spend by category, monthly trend, per-person

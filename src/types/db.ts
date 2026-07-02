@@ -257,6 +257,15 @@ export interface Database {
           deadline: string | null
           completed_at: string | null
           created_at: string
+          backing_type: 'manual' | 'bank_account' | 'mutual_fund'
+          backing_bank_label: string | null
+          backing_upi_vpa: string | null
+          backing_mf_scheme_code: number | null
+          backing_mf_scheme_name: string | null
+          backing_mf_units: number
+          backing_mf_nav: number | null
+          backing_mf_nav_date: string | null
+          backing_mf_refreshed_at: string | null
         }
         Insert: {
           id?: string
@@ -269,6 +278,15 @@ export interface Database {
           deadline?: string | null
           completed_at?: string | null
           created_at?: string
+          backing_type?: 'manual' | 'bank_account' | 'mutual_fund'
+          backing_bank_label?: string | null
+          backing_upi_vpa?: string | null
+          backing_mf_scheme_code?: number | null
+          backing_mf_scheme_name?: string | null
+          backing_mf_units?: number
+          backing_mf_nav?: number | null
+          backing_mf_nav_date?: string | null
+          backing_mf_refreshed_at?: string | null
         }
         Update: Partial<Database['public']['Tables']['savings_goals']['Insert']>
         Relationships: [
@@ -577,6 +595,14 @@ export interface Database {
       }
       increment_goal_amount: {
         Args: { goal_id: string; delta: number }
+        Returns: void
+      }
+      increment_goal_mf_units: {
+        Args: { goal_id: string; delta_units: number }
+        Returns: void
+      }
+      refresh_goal_mf_value: {
+        Args: { goal_id: string; new_nav: number; new_nav_date: string }
         Returns: void
       }
       compute_settlement: {

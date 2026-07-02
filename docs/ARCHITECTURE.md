@@ -89,6 +89,12 @@ Deno functions in `supabase/functions/`, deployed by the CI workflow:
   current month (monthly recurrence only).
 - `settlement-reminders` — periodic cron; pushes a reminder to whoever owes on
   an unsettled current-month settlement.
+- `refresh-mf-nav` — hourly cron; refreshes mutual-fund-backed savings goals
+  with the latest AMFI NAV (via the free MFAPI.in mirror) and restates each
+  goal's `current_amount` as units x NAV. There is no single API spanning
+  Groww and Zerodha (and no public Groww mutual-fund API at all), but both
+  brokers sell the same AMFI schemes, so the scheme code + units held is
+  enough to track a holding's market value without broker credentials.
 - `send-push` — sends Web Push to a user's subscriptions; prunes expired ones.
 - `scan-receipt` — vision OCR of a receipt image (Anthropic) → amount/date/merchant.
 - `parse-expense` — natural-language note (Anthropic) → structured expense fields.
