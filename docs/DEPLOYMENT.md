@@ -162,14 +162,17 @@ unavailable. Without the `VAPID_*` values, push notifications are disabled.
 
 ## Edge functions deployed
 
-The workflow deploys all five Deno functions
+The workflow deploys all the Deno functions
 (`recurring-expenses`, `send-push`, `scan-receipt`, `parse-expense`,
-`settlement-reminders`). Two of them are meant to run on a schedule via
-`pg_cron` -> `pg_net` (or an external scheduler):
+`settlement-reminders`, `tmdb`, `recommend-movies`, `refresh-mf-nav`). Three of
+them are meant to run on a schedule via `pg_cron` -> `pg_net` (or an external
+scheduler):
 
 - `recurring-expenses` — monthly, on the 1st, to clone due recurring expenses.
 - `settlement-reminders` — periodically (weekly is sensible) to nudge whoever
   owes on the current month's unsettled settlement.
+- `refresh-mf-nav` — hourly, to restate mutual-fund-backed savings goals at
+  their latest market value (units x NAV from AMFI via MFAPI.in).
 
 ## CI/CD workflows
 

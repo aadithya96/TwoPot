@@ -210,7 +210,7 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         run: |
-          for fn in recurring-expenses send-push scan-receipt parse-expense settlement-reminders tmdb recommend-movies; do
+          for fn in recurring-expenses send-push scan-receipt parse-expense settlement-reminders tmdb recommend-movies refresh-mf-nav; do
             supabase functions deploy "$fn" --project-ref "$SUPABASE_PROJECT_REF"
           done
 

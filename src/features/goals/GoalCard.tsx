@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { Box, Button, Card, CardContent, Chip, LinearProgress, Stack, Typography } from '@mui/material'
+import { Box, Button, Card, CardContent, Chip, LinearProgress, Stack, Tooltip, Typography } from '@mui/material'
 import CheckCircle from '@mui/icons-material/CheckCircle'
+import AccountBalanceOutlined from '@mui/icons-material/AccountBalanceOutlined'
+import ShowChartOutlined from '@mui/icons-material/ShowChartOutlined'
 import { formatINR } from '@/lib/currency'
 import type { Profile, SavingsGoal } from '@/types/app'
 import { GoalIcon } from './GoalIcon'
@@ -42,6 +44,38 @@ export function GoalCard({ goal, members }: GoalCardProps) {
                 {goal.name}
               </Typography>
             </Stack>
+
+            {goal.backing_type === 'bank_account' && (
+              <Tooltip title={goal.backing_upi_vpa ?? ''}>
+                <Chip
+                  icon={<AccountBalanceOutlined fontSize="small" />}
+                  label={goal.backing_bank_label ?? 'Bank account'}
+                  size="small"
+                  variant="outlined"
+                  sx={{ alignSelf: 'flex-start' }}
+                />
+              </Tooltip>
+            )}
+
+            {goal.backing_type === 'mutual_fund' && (
+              <Stack spacing={0.5}>
+                <Chip
+                  icon={<ShowChartOutlined fontSize="small" />}
+                  label={goal.backing_mf_scheme_name ?? 'Mutual fund'}
+                  size="small"
+                  variant="outlined"
+                  sx={{ alignSelf: 'flex-start', maxWidth: '100%' }}
+                />
+                <Typography variant="labelSmall" color="text.secondary">
+                  {goal.backing_mf_units} units
+                  {goal.backing_mf_nav !== null
+                    ? ` @ ${formatINR(Math.round(goal.backing_mf_nav * 100))} NAV${
+                        goal.backing_mf_nav_date ? ` (as of ${goal.backing_mf_nav_date})` : ''
+                      }`
+                    : ' — NAV pending'}
+                </Typography>
+              </Stack>
+            )}
 
             <Typography variant="bodyMedium" color="text.secondary">
               {formatINR(goal.current_amount)} of {formatINR(goal.target_amount)}
