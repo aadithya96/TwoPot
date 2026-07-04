@@ -35,6 +35,12 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      // injectManifest (custom src/sw.ts) instead of generateSW: push
+      // notifications need `push`/`notificationclick` listeners in the service
+      // worker, which the generated worker cannot include.
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       registerType: 'prompt',
       includeAssets: ['favicon.ico', 'icons/*.png'],
       manifest: {
@@ -60,21 +66,9 @@ export default defineConfig({
           },
         ],
       },
-      workbox: {
+      // Runtime caching for the Supabase API lives in src/sw.ts now.
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: ({ url }) =>
-              url.pathname.startsWith('/rest/v1') ||
-              url.pathname.startsWith('/auth/v1'),
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'supabase-api',
-              networkTimeoutSeconds: 10,
-              expiration: { maxEntries: 100, maxAgeSeconds: 86400 },
-            },
-          },
-        ],
       },
     }),
   ],

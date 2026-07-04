@@ -23,7 +23,7 @@ import { useExpenses } from '@/features/expenses/useExpenses'
 import { ExpenseRow } from '@/features/expenses/ExpenseRow'
 import { useBudgetUsage } from '@/features/budgets'
 import { GoalCard, useGoals } from '@/features/goals'
-import { useIsSettled, useSettlement } from '@/features/settlement/useSettlement'
+import { useBalanceTrend } from '@/features/settlement/useSettlement'
 import { usePotConfig } from '@/features/pots/usePots'
 import { useCurrentUser } from '@/features/auth'
 import { SetupChecklist, type SetupStep } from '@/features/home/SetupChecklist'
@@ -31,10 +31,10 @@ import { SETUP_DISMISSED_KEY } from '@/lib/storageKeys'
 import { lazyWithRetry } from '@/lib/lazyWithRetry'
 
 // Heavy or below-the-fold sections are code-split so they stay out of the
-// initial Home bundle. SettlementCard pulled in the settlement barrel (incl.
+// initial Home bundle. SettlementSection pulled in the settlement barrel (incl.
 // recharts) and AddExpenseSheet only renders on demand from the FAB.
-const SettlementCard = lazyWithRetry(() =>
-  import('@/features/settlement/SettlementCard').then((m) => ({ default: m.SettlementCard }))
+const SettlementSection = lazyWithRetry(() =>
+  import('@/features/settlement/SettlementSection').then((m) => ({ default: m.SettlementSection }))
 )
 const PotsOverview = lazyWithRetry(() =>
   import('@/features/pots/PotsOverview').then((m) => ({ default: m.PotsOverview }))
@@ -68,14 +68,7 @@ export function HomePage() {
   const { data: budgetUsage } = useBudgetUsage(householdId ?? undefined)
   const { data: categories } = useCategories(householdId ?? undefined)
   const { data: goals, isLoading: isGoalsLoading } = useGoals(householdId ?? undefined)
-  const { data: settlement, isLoading: isSettlementLoading } = useSettlement(
-    householdId ?? undefined,
-    month
-  )
-  const { data: isSettled, isLoading: isSettledLoading } = useIsSettled(
-    householdId ?? undefined,
-    month
-  )
+  const { data: balanceTrend } = useBalanceTrend(householdId ?? undefined)
   const { data: potConfig, isLoading: isPotConfigLoading } = usePotConfig(householdId ?? undefined)
 
   // Mirror PotsOverview's own visibility rule so we only reserve layout space
@@ -110,6 +103,13 @@ export function HomePage() {
   const hasSharedExpenses = useMemo(
     () => (expenses ?? []).some((expense) => expense.owner === 'shared'),
     [expenses]
+  )
+
+  // A past month with an unsettled balance should surface the settle-up
+  // section even when the current month has no shared expenses yet.
+  const hasOutstandingBalance = useMemo(
+    () => (balanceTrend ?? []).some((row) => row.outstanding_amount !== 0),
+    [balanceTrend]
   )
 
   const budgetAlerts = useMemo(
@@ -238,20 +238,13 @@ export function HomePage() {
         (isExpensesLoading ? (
           <Skeleton variant="rounded" height={200} />
         ) : (
-          hasSharedExpenses && (
+          (hasSharedExpenses || hasOutstandingBalance) && (
             <Suspense fallback={<Skeleton variant="rounded" height={200} />}>
-              {isSettlementLoading || isSettledLoading ? (
-                <Skeleton variant="rounded" height={200} />
-              ) : (
-                <SettlementCard
-                  settlement={settlement ?? null}
-                  members={members}
-                  householdId={householdId}
-                  periodMonth={month}
-                  isSettled={isSettled ?? false}
-                  currentUserId={currentUser?.id}
-                />
-              )}
+              <SettlementSection
+                householdId={householdId}
+                members={members}
+                currentUserId={currentUser?.id}
+              />
             </Suspense>
           )
         ))}
@@ -324,7 +317,10 @@ export function HomePage() {
         )}
       </Box>
 
-      <Box>
+      {/* minWidth: 0 keeps the horizontally-scrolling goals row from widening
+          this grid track (grid items default to min-width: auto), which made
+          the whole page scroll sideways instead of just the row. */}
+      <Box sx={{ minWidth: 0 }}>
         <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
           <Typography variant="titleMedium">Goals</Typography>
           <Link component={RouterLink} to="/goals" variant="labelLarge">
@@ -383,7 +379,12 @@ export function HomePage() {
         color="primary"
         aria-label="Add expense"
         onClick={() => setIsAddOpen(true)}
-        sx={{ position: 'fixed', bottom: { xs: 88, md: 32 }, right: { xs: 16, md: 32 } }}
+        sx={{
+          position: 'fixed',
+          // Clear the 80px bottom nav plus any gesture/home-indicator inset.
+          bottom: { xs: 'calc(96px + env(safe-area-inset-bottom))', md: 32 },
+          right: { xs: 16, md: 32 },
+        }}
       >
         <AddOutlinedIcon />
       </Fab>

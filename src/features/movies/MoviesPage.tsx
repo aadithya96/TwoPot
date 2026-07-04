@@ -97,7 +97,12 @@ export function MoviesPage() {
         <Fab
           color="primary"
           onClick={() => setDialogOpen(true)}
-          sx={{ position: 'fixed', bottom: { xs: 96, md: 32 }, right: { xs: 16, md: 32 } }}
+          sx={{
+            position: 'fixed',
+            // Clear the 80px bottom nav plus any gesture/home-indicator inset.
+            bottom: { xs: 'calc(96px + env(safe-area-inset-bottom))', md: 32 },
+            right: { xs: 16, md: 32 },
+          }}
           aria-label="Add movie"
         >
           <Add />

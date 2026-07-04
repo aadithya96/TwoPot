@@ -97,23 +97,111 @@ export function useMarkSettled() {
         queryKey: queryKeys.settlementRecord(variables.householdId, variables.periodMonth),
       })
       void queryClient.invalidateQueries({ queryKey: queryKeys.settlementHistory(variables.householdId) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.balanceTrend(variables.householdId) })
     },
   })
 }
 
-/** One month of the running balance between the two household members, from `balance_trend`. */
+/** One month's share of a multi-month settle-up. */
+export interface SettleMonthInput {
+  periodMonth: string
+  amount: number
+  owedBy: string
+  owedTo: string
+}
+
+/**
+ * Nets a balance-trend history into an all-months settle-up: the single
+ * "who owes whom overall" figure (null when the couple is square) plus the
+ * per-month outstanding entries that marking it settled should record.
+ */
+export function summarizeOutstanding(rows: BalanceTrendRow[]): {
+  settlement: SettlementResult | null
+  months: SettleMonthInput[]
+} {
+  const memberA = rows[0]?.member_a
+  const memberB = rows[0]?.member_b
+  const total = rows[rows.length - 1]?.running_balance ?? 0
+
+  const months = rows
+    .filter((row) => row.outstanding_amount !== 0)
+    .map((row) => ({
+      periodMonth: row.period_month.slice(0, 7),
+      amount: Math.abs(row.outstanding_amount),
+      owedBy: row.outstanding_amount > 0 ? row.member_b : row.member_a,
+      owedTo: row.outstanding_amount > 0 ? row.member_a : row.member_b,
+    }))
+
+  const settlement =
+    total !== 0 && memberA && memberB
+      ? {
+          owedBy: total > 0 ? memberB : memberA,
+          owedTo: total > 0 ? memberA : memberB,
+          amount: Math.abs(total),
+        }
+      : null
+
+  return { settlement, months }
+}
+
+/**
+ * Marks several months settled in one upsert — used by the "All months"
+ * option of the settle-up card. Each month keeps its own amount/direction so
+ * the settlement history stays per-month.
+ */
+export function useMarkMonthsSettled() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (input: { householdId: string; months: SettleMonthInput[] }): Promise<void> => {
+      const settledAt = new Date().toISOString()
+      const { error } = await supabase.from('settlements').upsert(
+        input.months.map((month) => ({
+          household_id: input.householdId,
+          period_month: monthStartDate(month.periodMonth),
+          amount: month.amount,
+          owed_by: month.owedBy,
+          owed_to: month.owedTo,
+          settled: true,
+          settled_at: settledAt,
+        })),
+        { onConflict: 'household_id,period_month' }
+      )
+      if (error) throw error
+    },
+    onSuccess: (_data, variables) => {
+      for (const month of variables.months) {
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.settlement(variables.householdId, month.periodMonth),
+        })
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.settlementRecord(variables.householdId, month.periodMonth),
+        })
+      }
+      void queryClient.invalidateQueries({ queryKey: queryKeys.settlementHistory(variables.householdId) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.balanceTrend(variables.householdId) })
+    },
+  })
+}
+
+/** One month of the balance between the two household members, from `balance_trend`. */
 export interface BalanceTrendRow {
   period_month: string
   member_a: string
   member_b: string
+  /** That month's shared-expense flows netted out. */
   net_amount: number
+  /** `net_amount` minus any settled amount recorded for the month (0 once settled). */
+  outstanding_amount: number
+  /** Cumulative outstanding balance up to and including the month. */
+  running_balance: number
 }
 
 /**
- * Fetches the last several months of running balance between the household's
- * two members via the `balance_trend` RPC, oldest first. `net_amount` is
- * signed from `member_a`'s (the earlier-joined member's) perspective:
- * positive means they're owed money, negative means they owe it.
+ * Fetches the last several months of balance between the household's two
+ * members via the `balance_trend` RPC, oldest first. All amounts are signed
+ * from `member_a`'s (the earlier-joined member's) perspective: positive means
+ * they're owed money, negative means they owe it.
  */
 export function useBalanceTrend(householdId: string | undefined): UseQueryResult<BalanceTrendRow[]> {
   return useQuery({
@@ -122,7 +210,14 @@ export function useBalanceTrend(householdId: string | undefined): UseQueryResult
       if (!householdId) return []
       const { data, error } = await supabase.rpc('balance_trend', { p_household_id: householdId })
       if (error) throw error
-      return data ?? []
+      // Fall back to the per-month net when migration 027 hasn't run yet, so
+      // a deploy ahead of the DB migration degrades to the old behaviour
+      // instead of charting undefined values.
+      return (data ?? []).map((row) => ({
+        ...row,
+        outstanding_amount: row.outstanding_amount ?? row.net_amount,
+        running_balance: row.running_balance ?? row.net_amount,
+      }))
     },
     enabled: Boolean(householdId),
   })

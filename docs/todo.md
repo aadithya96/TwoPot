@@ -23,7 +23,10 @@ Working backlog of UI/UX and feature work. Items move from **Up next** →
 - [x] "Two pots" income model — shared pot + two personal pots, auto-allocation
       rules (`migration 015_two_pots`)
 - [x] Partner balance over time — running "who owes whom" trend chart on
-      Insights (`migration 020_balance_trend`, `BalanceTrend.tsx`)
+      Insights (`migration 020_balance_trend`, `BalanceTrend.tsx`); reworked
+      into a cumulative outstanding balance net of recorded settlements
+      (`migration 027_balance_trend_running`), so settling up returns the
+      line to zero
 - [x] Partner activity feed — "Aadi added ₹500 groceries" feed on Home
       (realtime `audit_log` subscription) + push on large shared expenses
 - [x] UPI settle-up deep links (`migration 021_upi_vpa`, `src/lib/upi.ts`) +
@@ -39,6 +42,18 @@ Working backlog of UI/UX and feature work. Items move from **Up next** →
       TMDB + Claude recommendation engine (`recommend-movies` edge function)
       that ranks a TMDB candidate pool for both partners' tastes
       (`migration 025_movies`)
+- [x] Settle-up period picker on Home — settle this month, any past month, or
+      all months combined (`SettlementSection.tsx`, `useMarkMonthsSettled`)
+- [x] Web Push actually displays — custom `src/sw.ts` service worker
+      (vite-plugin-pwa `injectManifest`) with `push`/`notificationclick`
+      handlers; subscribe errors surfaced in settings with iOS guidance
+- [x] "Add to Home Screen" entry in Settings — native install prompt where
+      available, manual iOS/desktop instructions otherwise
+      (`AddToHomeScreenItem`, `src/lib/installPrompt.ts`)
+- [x] Mobile polish batch — numeric keyboard on amount fields
+      (`inputMode` moved to the real `<input>`), FABs cleared above the
+      bottom nav's safe-area inset, and horizontal scrollers (Home goals
+      row) contained so the page never pans sideways
 
 ---
 

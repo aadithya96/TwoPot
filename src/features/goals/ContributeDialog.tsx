@@ -134,9 +134,9 @@ export function ContributeDialog({ open, onClose, goal, members, averageDailyRat
             }}
             slotProps={{
               input: {
-                inputMode: 'decimal',
                 startAdornment: <InputAdornment position="start">₹</InputAdornment>,
               },
+              htmlInput: { inputMode: 'decimal' },
             }}
           />
 
@@ -195,7 +195,7 @@ export function ContributeDialog({ open, onClose, goal, members, averageDailyRat
                 if (/^[0-9]*\.?[0-9]*$/.test(next)) setUnitsDisplay(next)
               }}
               placeholder={estimatedUnits > 0 ? String(estimatedUnits) : undefined}
-              slotProps={{ input: { inputMode: 'decimal' } }}
+              slotProps={{ htmlInput: { inputMode: 'decimal' } }}
               helperText={`≈ ${estimatedUnits} units at NAV ${formatINR(Math.round(nav * 100))} — adjust to the units your order actually filled`}
             />
           )}

@@ -7,21 +7,25 @@ src/
   components/   shared UI: layout (AppShell, BottomNav, SideNav, TopAppBar),
                 feedback (EmptyState, ErrorBoundary, LoadingSkeleton), forms
                 (AmountField, CategoryPicker, SplitSelector), CategoryIcon,
-                InstallBanner, RealtimeProvider
+                AddToHomeScreenItem, UpdatePrompt, RealtimeProvider
   features/     feature modules, each with its components + hooks + index.ts:
                 auth, expenses, budgets, categories, goals, insights,
                 settlement, splitting, pots, household, home, notifications
   hooks/        cross-cutting hooks (back button, dark mode, swipe-to-delete,
                 pull-to-refresh, visual viewport, scroll restoration, in-view,
-                install state, categories)
+                categories)
   lib/          supabase client, MUI theme, query keys, currency/date helpers,
-                errors, layout helpers, storage keys, UPI helpers, lazyWithRetry
+                errors, layout helpers, storage keys, UPI helpers, lazyWithRetry,
+                installPrompt (PWA install-prompt capture)
   stores/       zustand stores (householdStore, uiStore)
   types/        db.ts (Supabase schema types), app.ts (derived app types)
   pages/        thin route-level wrappers (Home, Expenses, Budgets, Goals,
                 Insights, Settings, Notifications, Household)
+  sw.ts         custom service worker (precache + Supabase API caching + Web
+                Push display/click handlers), built via vite-plugin-pwa's
+                injectManifest strategy
 supabase/
-  migrations/   numbered SQL migrations (001–022)
+  migrations/   numbered SQL migrations (001–027)
   functions/    Deno edge functions: recurring-expenses, send-push,
                 scan-receipt, parse-expense, settlement-reminders
 k8s/            k3s manifests
@@ -102,10 +106,24 @@ Deno functions in `supabase/functions/`, deployed by the CI workflow:
 `scan-receipt` and `parse-expense` need an `ANTHROPIC_API_KEY`; push functions
 need the `VAPID_*` secrets. See [DEPLOYMENT.md](DEPLOYMENT.md).
 
+## Service worker & push
+
+`src/sw.ts` is a hand-written service worker bundled through vite-plugin-pwa's
+`injectManifest` strategy (see `vite.config.ts`). It precaches the app shell,
+serves SPA navigations from the precached `index.html`, caches Supabase
+REST/auth responses NetworkFirst, and handles `push` (display the payload from
+the `send-push` edge function) and `notificationclick` (focus or open the app
+at the payload's URL). iOS only delivers web push to installed (Home Screen)
+apps on 16.4+; the Settings page offers "Add to Home Screen" via
+`AddToHomeScreenItem`, backed by `src/lib/installPrompt.ts`, which captures
+Chrome's one-shot `beforeinstallprompt` event at boot (`main.tsx`).
+
 ## Mobile-specific patterns
 
 - `dvh` units for full-height layout, `env(safe-area-inset-*)` on bottom nav /
-  sheets / FAB / top bar.
+  sheets / FAB / top bar. The app shell's main scroll container clips
+  horizontal overflow so wide rows (e.g. the Home goals scroller) can never
+  pan the whole page sideways.
 - `useBackButton` intercepts Android hardware back for every Drawer/Dialog.
 - `useVisualViewport` repositions bottom sheets above the on-screen keyboard.
 - `useSwipeToDelete` for expense row swipe gestures; `usePullToRefresh` on lists.

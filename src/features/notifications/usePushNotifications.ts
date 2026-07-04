@@ -43,7 +43,14 @@ export function usePushSetup(userId: string | undefined): UseQueryResult<PushSub
  */
 export async function subscribeToPush(userId: string): Promise<void> {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    throw new Error('Push notifications are not supported in this browser.')
+    // iOS only exposes web push (16.4+) to apps installed on the Home Screen,
+    // so point the user there instead of a dead-end "unsupported" message.
+    const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    throw new Error(
+      isIos
+        ? 'On iPhone/iPad, first add TwoPot to your Home Screen (Share → Add to Home Screen), then enable notifications from the installed app. Requires iOS 16.4 or later.'
+        : 'Push notifications are not supported in this browser.'
+    )
   }
 
   const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY

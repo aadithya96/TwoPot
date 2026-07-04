@@ -168,9 +168,9 @@ export function CreateGoalDialog({ open, onClose, householdId }: CreateGoalDialo
             }}
             slotProps={{
               input: {
-                inputMode: 'decimal',
                 startAdornment: <InputAdornment position="start">₹</InputAdornment>,
               },
+              htmlInput: { inputMode: 'decimal' },
             }}
           />
           <TextField
@@ -252,7 +252,7 @@ export function CreateGoalDialog({ open, onClose, householdId }: CreateGoalDialo
                   const next = event.target.value
                   if (/^[0-9]*\.?[0-9]*$/.test(next)) setUnitsDisplay(next)
                 }}
-                slotProps={{ input: { inputMode: 'decimal' } }}
+                slotProps={{ htmlInput: { inputMode: 'decimal' } }}
                 helperText="The goal tracks units × NAV, refreshed hourly"
               />
             </>

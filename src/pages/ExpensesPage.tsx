@@ -47,7 +47,12 @@ export function ExpensesPage() {
         color="primary"
         aria-label="Add expense"
         onClick={() => setIsAddOpen(true)}
-        sx={{ position: 'fixed', bottom: { xs: 88, md: 32 }, right: { xs: 16, md: 32 } }}
+        sx={{
+          position: 'fixed',
+          // Clear the 80px bottom nav plus any gesture/home-indicator inset.
+          bottom: { xs: 'calc(96px + env(safe-area-inset-bottom))', md: 32 },
+          right: { xs: 16, md: 32 },
+        }}
       >
         <AddOutlinedIcon />
       </Fab>

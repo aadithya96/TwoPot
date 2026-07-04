@@ -20,6 +20,7 @@ import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined'
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined'
 import { Link as RouterLink } from 'react-router-dom'
+import { AddToHomeScreenItem } from '@/components/AddToHomeScreenItem'
 import { useCurrentUser, signOut } from '@/features/auth'
 import { useHouseholdStore } from '@/stores/householdStore'
 import { useDarkMode } from '@/hooks/useDarkMode'
@@ -98,6 +99,7 @@ export function SettingsPage() {
             </ListItemIcon>
             <ListItemText primary="Activity log" />
           </ListItem>
+          <AddToHomeScreenItem />
         </List>
       </Card>
 
