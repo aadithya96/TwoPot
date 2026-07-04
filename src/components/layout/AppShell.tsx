@@ -41,6 +41,9 @@ export function AppShell({ title, avatarUrl, displayName, onSignOut }: AppShellP
           sx={{
             flex: 1,
             overflowY: 'auto',
+            // Pages must never pan sideways: anything wider than the viewport
+            // (e.g. a horizontal card row) has to scroll inside its own box.
+            overflowX: 'hidden',
             WebkitOverflowScrolling: 'touch',
             paddingBottom: { xs: 'calc(80px + env(safe-area-inset-bottom))', md: 4 },
           }}

@@ -637,6 +637,16 @@ export function useMarkSettled(householdId: string) {
   was added to read the persisted `settled` boolean directly from the
   `settlements` table for the current month, since the two concerns
   (live amount vs. persisted settled state) can't be derived from one query.
+- The Home settle-up card grew into `SettlementSection`, which adds a period
+  picker: this month, any month with settlement history, or **All months**.
+  "All months" nets every month's outstanding balance (from `balance_trend`,
+  summarised by `summarizeOutstanding`) into one figure and, on confirm,
+  `useMarkMonthsSettled` upserts a settled row per outstanding month so
+  settlement history stays per-month.
+- `balance_trend` (reworked in `021_balance_trend_running.sql`) returns, per
+  month, the net shared-expense flow, the outstanding amount net of recorded
+  settlements, and a cumulative `running_balance` — the Insights chart plots
+  the running balance, so marking months settled returns the line to zero.
 
 ---
 
@@ -1409,19 +1419,35 @@ export function useInstallPrompt() {
 
 ### Todo — PWA Setup
 
-- [ ] Configure `vite-plugin-pwa` with full manifest
-- [ ] Design and export app icon (512×512 SVG/PNG source)
-- [ ] Generate all icon sizes with `pwa-asset-generator`
-- [ ] Add iOS meta tags to `index.html`
-- [ ] Add `theme-color` meta tag (matches manifest)
-- [ ] Implement `useInstallPrompt` hook
-- [ ] Build `InstallBanner` component — shows when `canInstall` is true, dismissible
+- [x] Configure `vite-plugin-pwa` with full manifest
+- [x] Design and export app icon (512×512 SVG/PNG source)
+- [x] Generate all icon sizes with `pwa-asset-generator`
+- [x] Add iOS meta tags to `index.html`
+- [x] Add `theme-color` meta tag (matches manifest)
+- [x] Implement install-prompt capture — `src/lib/installPrompt.ts` stashes
+      the one-shot `beforeinstallprompt` event at boot (not a mount-time
+      hook, which would miss it)
+- [x] Surface install in Settings — `AddToHomeScreenItem` uses the captured
+      native prompt where available and falls back to manual iOS/desktop
+      instructions; hidden when already running standalone
 - [ ] Test installation on Android Chrome
 - [ ] Test installation on iOS Safari (Add to Home Screen)
 - [ ] Test `start_url` and app shortcut on Android
 - [ ] Verify manifest in Chrome DevTools → Application → Manifest
-- [ ] Run Lighthouse PWA audit and fix any issues (target score > 90)
-- [ ] Test `autoUpdate` behaviour — app reloads silently on new deploy
+- [x] Run Lighthouse PWA audit and fix any issues (target score > 90)
+- [ ] Test update behaviour — `registerType: 'prompt'` + `UpdatePrompt`
+      snackbar (deviation: prompt instead of silent `autoUpdate`)
+
+### Deviations (§11)
+
+- The service worker is now hand-written (`src/sw.ts`) and built with
+  vite-plugin-pwa's **`injectManifest`** strategy instead of `generateSW`,
+  because the generated worker cannot contain `push`/`notificationclick`
+  handlers. It reproduces the previous behaviour (precache, SPA navigation
+  fallback, NetworkFirst Supabase API caching) via `workbox-*` runtime
+  packages (devDependencies) and adds the push handlers from §13.5.
+- `InstallBanner`/`useInstallState` were removed unused in favour of the
+  Settings-page `AddToHomeScreenItem` + `installPrompt.ts` pair.
 
 ---
 
@@ -1561,6 +1587,9 @@ Call `send-push` Edge Function when:
 
 ### 13.5 Service worker push handler
 
+Implemented in `src/sw.ts` (bundled via vite-plugin-pwa `injectManifest`; see
+the §11 deviations). Original sketch:
+
 ```js
 // public/sw-push.js (injected by Vite PWA)
 self.addEventListener('push', (event) => {
@@ -1583,18 +1612,21 @@ self.addEventListener('notificationclick', (event) => {
 
 ### Todo — Push Notifications
 
-- [ ] Generate VAPID keys and store in Supabase secrets
-- [ ] Add `VITE_VAPID_PUBLIC_KEY` to frontend env
-- [ ] Implement `subscribeToPush` and `unsubscribeFromPush` functions
-- [ ] Build `NotificationSettings` page — toggle per notification type
+- [x] Generate VAPID keys and store in Supabase secrets
+- [x] Add `VITE_VAPID_PUBLIC_KEY` to frontend env
+- [x] Implement `subscribeToPush` and `unsubscribeFromPush` functions
+      (`src/features/notifications/usePushNotifications.ts`; subscribe errors
+      are surfaced in settings, with iOS Home Screen guidance)
+- [x] Build `NotificationSettings` page — toggle per notification type
 - [ ] Request notification permission on first login (after user interaction)
+      — deliberately settings-only for now
 - [x] Implement `send-push` Edge Function
 - [ ] Trigger push on budget 80% threshold (via Postgres function + Edge Function)
 - [ ] Trigger push on budget exceeded
-- [ ] Trigger push on partner large expense (configurable ₹ threshold)
-- [ ] Trigger push on settlement ready (monthly)
+- [x] Trigger push on partner large expense (`notifyPartner.ts`, ₹1,000 threshold)
+- [x] Trigger push on settlement ready (monthly) — `settlement-reminders`
 - [ ] Trigger push on goal completion
-- [ ] Add push handler to service worker
+- [x] Add push handler to service worker (`src/sw.ts` push/notificationclick)
 - [ ] Test on Android Chrome (push works)
 - [ ] Test on iOS Safari 17+ (push works for installed PWAs)
 - [x] Handle expired/invalid push subscriptions (remove from DB on 410 response) — also handles 404
@@ -2881,7 +2913,15 @@ Shipped after the original plan; see `docs/todo.md` and the migrations noted:
 - [x] **Activity / audit log** — who-did-what feed (`014_audit_log`, `src/features/household`)
 - [x] **Member management** — remove member, leave household, reset invite
   (`016`–`019`)
-- [x] **Partner balance-over-time trend** (`020_balance_trend`, `BalanceTrend.tsx`)
+- [x] **Partner balance-over-time trend** (`020_balance_trend`, reworked into a
+  running outstanding balance net of settlements in
+  `021_balance_trend_running`, `BalanceTrend.tsx`)
+- [x] **Settle-up period picker** — Home settlement card settles this month,
+  any past month, or all months combined (`SettlementSection.tsx`,
+  `useMarkMonthsSettled`)
+- [x] **Web Push display** — custom `src/sw.ts` service worker
+  (injectManifest) shows pushes and opens the app on tap; "Add to Home
+  Screen" entry in Settings (`AddToHomeScreenItem`)
 - [x] **UPI settle-up deep links** (`021_upi_vpa`, `src/lib/upi.ts`, `UpiSettings`)
 - [x] **Settlement reminders** — `settlement-reminders` edge function
 - [x] **Adaptive desktop layout** — side navigation rail on desktop
