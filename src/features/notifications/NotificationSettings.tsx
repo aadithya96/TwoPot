@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import {
+  Alert,
   List,
   ListItem,
   ListItemText,
@@ -59,7 +60,21 @@ export interface NotificationSettingsProps {
  */
 export function NotificationSettings({ userId, storedPrefs }: NotificationSettingsProps) {
   const [prefs, setPrefs] = useState<NotificationPrefs>(() => parsePrefs(storedPrefs))
+  const [subscribeError, setSubscribeError] = useState<string | null>(null)
   const { isSubscribed, isLoading, subscribe } = usePushNotificationActions(userId)
+
+  const handleSubscribe = (): void => {
+    setSubscribeError(null)
+    subscribe().catch((error: unknown) => {
+      if (error instanceof DOMException && error.name === 'NotAllowedError') {
+        setSubscribeError(
+          'Notifications are blocked for TwoPot. Allow them in your browser or system settings, then try again.'
+        )
+      } else {
+        setSubscribeError(error instanceof Error ? error.message : 'Could not enable notifications.')
+      }
+    })
+  }
 
   const handleToggle = (key: keyof NotificationPrefs): void => {
     const next = { ...prefs, [key]: !prefs[key] }
@@ -75,15 +90,14 @@ export function NotificationSettings({ userId, storedPrefs }: NotificationSettin
       {!isSubscribed && (
         <Button
           variant="contained"
-          onClick={() => {
-            void subscribe()
-          }}
+          onClick={handleSubscribe}
           disabled={isLoading}
           startIcon={isLoading ? <CircularProgress size={16} color="inherit" /> : undefined}
         >
           Enable notifications
         </Button>
       )}
+      {subscribeError && <Alert severity="error">{subscribeError}</Alert>}
       <List disablePadding>
         {PREF_LABELS.map(({ key, label }) => (
           <ListItem

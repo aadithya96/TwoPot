@@ -111,9 +111,9 @@ export function SetBudgetDialog({
             }}
             slotProps={{
               input: {
-                inputMode: 'decimal',
                 startAdornment: <InputAdornment position="start">₹</InputAdornment>,
               },
+              htmlInput: { inputMode: 'decimal' },
             }}
           />
           <FormControlLabel

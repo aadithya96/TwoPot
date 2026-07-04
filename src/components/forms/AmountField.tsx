@@ -39,10 +39,11 @@ export function AmountField({ value, onChange, ...textFieldProps }: AmountFieldP
       onChange={handleChange}
       slotProps={{
         input: {
-          inputMode: 'decimal',
-          inputProps: { pattern: '[0-9]*\\.?[0-9]*' },
           startAdornment: <InputAdornment position="start">₹</InputAdornment>,
         },
+        // inputMode must land on the <input> element itself (htmlInput slot) —
+        // on the wrapper it's ignored and mobile keyboards stay alphabetic.
+        htmlInput: { inputMode: 'decimal', pattern: '[0-9]*\\.?[0-9]*' },
         ...textFieldProps.slotProps,
       }}
     />

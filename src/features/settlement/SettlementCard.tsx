@@ -34,9 +34,16 @@ export interface SettlementCardProps {
   isSettled: boolean
   /** The signed-in user's id, used to show the "Pay via UPI" action only to the debtor. */
   currentUserId?: string
+  /** Display label for the period; defaults to the formatted `periodMonth`. */
+  periodLabel?: string
+  /**
+   * Overrides what "Confirm" does — used by the all-months settle-up, which
+   * marks every outstanding month settled instead of just `periodMonth`.
+   */
+  onConfirm?: () => Promise<void>
 }
 
-/** Card showing who owes whom for a month, with a confirmation flow to mark it settled. */
+/** Card showing who owes whom for a period, with a confirmation flow to mark it settled. */
 export function SettlementCard({
   settlement,
   members,
@@ -44,10 +51,13 @@ export function SettlementCard({
   periodMonth,
   isSettled,
   currentUserId,
+  periodLabel,
+  onConfirm,
 }: SettlementCardProps) {
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [isConfirming, setIsConfirming] = useState(false)
   const markSettled = useMarkSettled()
-  const monthLabel = formatMonth(periodMonth)
+  const monthLabel = periodLabel ?? formatMonth(periodMonth)
 
   const isSquare = isSettled || !settlement || settlement.amount === 0
 
@@ -80,14 +90,23 @@ export function SettlementCard({
       : null
 
   const handleConfirm = async () => {
-    await markSettled.mutateAsync({
-      householdId,
-      periodMonth,
-      amount: settlement.amount,
-      owedBy: settlement.owedBy,
-      owedTo: settlement.owedTo,
-    })
-    setConfirmOpen(false)
+    setIsConfirming(true)
+    try {
+      if (onConfirm) {
+        await onConfirm()
+      } else {
+        await markSettled.mutateAsync({
+          householdId,
+          periodMonth,
+          amount: settlement.amount,
+          owedBy: settlement.owedBy,
+          owedTo: settlement.owedTo,
+        })
+      }
+      setConfirmOpen(false)
+    } finally {
+      setIsConfirming(false)
+    }
   }
 
   return (
@@ -142,9 +161,9 @@ export function SettlementCard({
           <Button onClick={() => setConfirmOpen(false)}>Cancel</Button>
           <Button
             variant="contained"
-            disabled={markSettled.isPending}
+            disabled={isConfirming}
             onClick={handleConfirm}
-            startIcon={markSettled.isPending ? <CircularProgress size={16} color="inherit" /> : undefined}
+            startIcon={isConfirming ? <CircularProgress size={16} color="inherit" /> : undefined}
           >
             Confirm
           </Button>

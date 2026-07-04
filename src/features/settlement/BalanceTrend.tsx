@@ -22,9 +22,11 @@ export interface BalanceTrendProps {
 }
 
 /**
- * Line chart of "who owes whom" over time: positive values mean `member_a`
- * (the earlier-joined member) is owed money, negative means they owe it.
- * Deferred until in view, matching the other insights charts.
+ * Line chart of the outstanding "who owes whom" balance over time: each point
+ * is the cumulative unsettled balance at that month (net of recorded
+ * settlements), so settling up brings the line back to zero. Positive values
+ * mean `member_a` (the earlier-joined member) is owed money, negative means
+ * they owe it. Deferred until in view, matching the other insights charts.
  */
 export function BalanceTrend({ data, members }: BalanceTrendProps) {
   const { ref, inView } = useInView({ threshold: 0.1 })
@@ -50,7 +52,8 @@ export function BalanceTrend({ data, members }: BalanceTrendProps) {
       ) : (
         <>
           <Typography variant="labelSmall" color="text.secondary">
-            Above zero: {memberB} owes {memberA}. Below zero: {memberA} owes {memberB}.
+            Unsettled balance at each month. Above zero: {memberB} owes {memberA}. Below zero:{' '}
+            {memberA} owes {memberB}. Settling up returns the line to zero.
           </Typography>
           <ResponsiveContainer width="100%" height={240}>
             <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -69,13 +72,16 @@ export function BalanceTrend({ data, members }: BalanceTrendProps) {
               />
               <ReferenceLine y={0} stroke={chartLineColor(theme)} />
               <Tooltip
-                formatter={(value) => formatINR(typeof value === 'number' ? value : 0)}
+                formatter={(value) => [
+                  formatINR(typeof value === 'number' ? value : 0),
+                  'Outstanding balance',
+                ]}
                 labelFormatter={(label) => shortMonthLabel(String(label))}
                 {...tooltipStyles(theme)}
               />
               <Line
                 type="monotone"
-                dataKey="net_amount"
+                dataKey="running_balance"
                 stroke={theme.palette.primary.main}
                 dot={{ r: 3 }}
               />

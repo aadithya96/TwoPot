@@ -653,6 +653,8 @@ export interface Database {
           member_a: string
           member_b: string
           net_amount: number
+          outstanding_amount: number
+          running_balance: number
         }[]
       }
       category_anomalies: {
