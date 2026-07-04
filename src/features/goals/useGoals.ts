@@ -92,6 +92,67 @@ export function useCreateGoal() {
   })
 }
 
+/** Input for editing a savings goal's presentation and target. */
+export interface UpdateGoalInput {
+  goalId: string
+  householdId: string
+  name: string
+  icon: string
+  color: string
+  targetAmount: number
+  deadline: string | null
+  /** The goal's current saved amount, used to (re)derive whether it's now complete. */
+  currentAmount: number
+}
+
+/**
+ * Updates an existing goal's name, icon, color, target amount, and deadline. The backing
+ * configuration is fixed at creation and left untouched here. `completed_at` is re-derived from the
+ * new target so that raising the target past what's saved re-opens a finished goal, and lowering it
+ * below what's saved marks it reached.
+ */
+export function useUpdateGoal() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (input: UpdateGoalInput): Promise<SavingsGoal> => {
+      const { data, error } = await supabase
+        .from('savings_goals')
+        .update({
+          name: input.name,
+          icon: input.icon,
+          color: input.color,
+          target_amount: input.targetAmount,
+          deadline: input.deadline,
+          completed_at: input.currentAmount >= input.targetAmount ? new Date().toISOString() : null,
+        })
+        .eq('id', input.goalId)
+        .select('*')
+        .single()
+      if (error) throw error
+      return data
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.goals(variables.householdId) })
+    },
+  })
+}
+
+/** Deletes a savings goal along with its contribution history (cascaded in the database). */
+export function useDeleteGoal() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ goalId }: { goalId: string; householdId: string }): Promise<void> => {
+      const { error } = await supabase.from('savings_goals').delete().eq('id', goalId)
+      if (error) throw error
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.goals(variables.householdId) })
+    },
+  })
+}
+
 /** Input for recording a contribution towards a savings goal. */
 export interface ContributeInput {
   goalId: string
