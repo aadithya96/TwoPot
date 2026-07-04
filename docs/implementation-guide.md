@@ -643,7 +643,7 @@ export function useMarkSettled(householdId: string) {
   summarised by `summarizeOutstanding`) into one figure and, on confirm,
   `useMarkMonthsSettled` upserts a settled row per outstanding month so
   settlement history stays per-month.
-- `balance_trend` (reworked in `021_balance_trend_running.sql`) returns, per
+- `balance_trend` (reworked in `027_balance_trend_running.sql`) returns, per
   month, the net shared-expense flow, the outstanding amount net of recorded
   settlements, and a cumulative `running_balance` — the Insights chart plots
   the running balance, so marking months settled returns the line to zero.
@@ -2915,7 +2915,7 @@ Shipped after the original plan; see `docs/todo.md` and the migrations noted:
   (`016`–`019`)
 - [x] **Partner balance-over-time trend** (`020_balance_trend`, reworked into a
   running outstanding balance net of settlements in
-  `021_balance_trend_running`, `BalanceTrend.tsx`)
+  `027_balance_trend_running`, `BalanceTrend.tsx`)
 - [x] **Settle-up period picker** — Home settlement card settles this month,
   any past month, or all months combined (`SettlementSection.tsx`,
   `useMarkMonthsSettled`)

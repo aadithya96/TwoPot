@@ -1,4 +1,4 @@
--- 021_balance_trend_running.sql
+-- 027_balance_trend_running.sql
 -- Reworks balance_trend into a true "partner balance over time":
 --
 -- The 020 version returned each month's net shared-expense flow in isolation,

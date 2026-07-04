@@ -25,7 +25,7 @@ src/
                 Push display/click handlers), built via vite-plugin-pwa's
                 injectManifest strategy
 supabase/
-  migrations/   numbered SQL migrations (001–021)
+  migrations/   numbered SQL migrations (001–027)
   functions/    Deno edge functions: recurring-expenses, send-push,
                 scan-receipt, parse-expense, settlement-reminders
 k8s/            k3s manifests

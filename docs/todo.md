@@ -25,7 +25,7 @@ Working backlog of UI/UX and feature work. Items move from **Up next** →
 - [x] Partner balance over time — running "who owes whom" trend chart on
       Insights (`migration 020_balance_trend`, `BalanceTrend.tsx`); reworked
       into a cumulative outstanding balance net of recorded settlements
-      (`migration 021_balance_trend_running`), so settling up returns the
+      (`migration 027_balance_trend_running`), so settling up returns the
       line to zero
 - [x] Partner activity feed — "Aadi added ₹500 groceries" feed on Home
       (realtime `audit_log` subscription) + push on large shared expenses

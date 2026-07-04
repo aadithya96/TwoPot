@@ -210,7 +210,7 @@ export function useBalanceTrend(householdId: string | undefined): UseQueryResult
       if (!householdId) return []
       const { data, error } = await supabase.rpc('balance_trend', { p_household_id: householdId })
       if (error) throw error
-      // Fall back to the per-month net when migration 021 hasn't run yet, so
+      // Fall back to the per-month net when migration 027 hasn't run yet, so
       // a deploy ahead of the DB migration degrades to the old behaviour
       // instead of charting undefined values.
       return (data ?? []).map((row) => ({
