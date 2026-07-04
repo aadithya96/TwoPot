@@ -1629,6 +1629,18 @@ self.addEventListener('notificationclick', (event) => {
 - [x] Add push handler to service worker (`src/sw.ts` push/notificationclick)
 - [ ] Test on Android Chrome (push works)
 - [ ] Test on iOS Safari 17+ (push works for installed PWAs)
+
+### Deviations (§13)
+
+- **One active subscription per user — latest device wins.** Instead of a row
+  per device (008's original shape), `028_push_single_active.sql` dedupes and
+  adds `unique (user_id)`, which the client's `ON CONFLICT (user_id)` upsert
+  always assumed. `usePushSubscriptionRefresh` (mounted in `AuthGuard`)
+  re-asserts this browser's existing subscription on every app open, so
+  whichever device the user opened last receives pushes, and a displaced
+  device takes the slot back just by reopening the app. Settings reports
+  subscribed-state per device (stored endpoint vs. this browser's endpoint),
+  and unsubscribing only deletes the row when this device owns it.
 - [x] Handle expired/invalid push subscriptions (remove from DB on 410 response) — also handles 404
 
 ---

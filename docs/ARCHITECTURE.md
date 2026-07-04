@@ -25,7 +25,7 @@ src/
                 Push display/click handlers), built via vite-plugin-pwa's
                 injectManifest strategy
 supabase/
-  migrations/   numbered SQL migrations (001–027)
+  migrations/   numbered SQL migrations (001–028)
   functions/    Deno edge functions: recurring-expenses, send-push,
                 scan-receipt, parse-expense, settlement-reminders
 k8s/            k3s manifests
@@ -117,6 +117,11 @@ at the payload's URL). iOS only delivers web push to installed (Home Screen)
 apps on 16.4+; the Settings page offers "Add to Home Screen" via
 `AddToHomeScreenItem`, backed by `src/lib/installPrompt.ts`, which captures
 Chrome's one-shot `beforeinstallprompt` event at boot (`main.tsx`).
+
+Each user has one **active** push subscription — the most recently opened
+device (`unique (user_id)`, migration 028). `usePushSubscriptionRefresh`
+(mounted in `AuthGuard`) re-upserts this browser's subscription on every app
+open, so pushes follow the user between devices automatically.
 
 ## Mobile-specific patterns
 

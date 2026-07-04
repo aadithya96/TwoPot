@@ -8,6 +8,7 @@ import {
   Button,
   Stack,
   CircularProgress,
+  Typography,
 } from '@mui/material'
 import { supabase } from '@/lib/supabase'
 import type { Json } from '@/types/db'
@@ -94,10 +95,14 @@ export function NotificationSettings({ userId, storedPrefs }: NotificationSettin
           disabled={isLoading}
           startIcon={isLoading ? <CircularProgress size={16} color="inherit" /> : undefined}
         >
-          Enable notifications
+          Enable notifications on this device
         </Button>
       )}
       {subscribeError && <Alert severity="error">{subscribeError}</Alert>}
+      <Typography variant="labelSmall" color="text.secondary">
+        Notifications go to the device you used most recently; opening the app on another device
+        moves them there.
+      </Typography>
       <List disablePadding>
         {PREF_LABELS.map(({ key, label }) => (
           <ListItem

@@ -50,6 +50,10 @@ Working backlog of UI/UX and feature work. Items move from **Up next** →
 - [x] "Add to Home Screen" entry in Settings — native install prompt where
       available, manual iOS/desktop instructions otherwise
       (`AddToHomeScreenItem`, `src/lib/installPrompt.ts`)
+- [x] Latest-active-device push — one subscription per user that follows the
+      most recently opened device; re-asserted on app open, per-device
+      subscribed state in Settings (`migration 028_push_single_active`,
+      `usePushSubscriptionRefresh`)
 - [x] Mobile polish batch — numeric keyboard on amount fields
       (`inputMode` moved to the real `<input>`), FABs cleared above the
       bottom nav's safe-area inset, and horizontal scrollers (Home goals
