@@ -21,12 +21,22 @@ export interface UploadReceiptInput {
 export function useUploadReceipt(): UseMutationResult<string, Error, UploadReceiptInput> {
   return useMutation({
     mutationFn: async ({ householdId, file }: UploadReceiptInput): Promise<string> => {
-      const compressed = await imageCompression(file, COMPRESSION_OPTIONS)
-      const path = `${householdId}/${crypto.randomUUID()}.jpg`
+      // Compress to keep uploads small, but fall back to the original file if
+      // the browser can't decode it (e.g. some HEIC gallery images), so a
+      // compression hiccup never blocks attaching the photo.
+      let compressed: Blob
+      try {
+        compressed = await imageCompression(file, COMPRESSION_OPTIONS)
+      } catch {
+        compressed = file
+      }
+      const extension = compressed === file ? (file.name.split('.').pop() || 'jpg') : 'jpg'
+      const contentType = compressed === file ? file.type || 'image/jpeg' : 'image/jpeg'
+      const path = `${householdId}/${crypto.randomUUID()}.${extension}`
 
       const { error: uploadError } = await supabase.storage
         .from('receipts')
-        .upload(path, compressed, { contentType: 'image/jpeg' })
+        .upload(path, compressed, { contentType })
       if (uploadError) throw uploadError
 
       const { data, error: signError } = await supabase.storage

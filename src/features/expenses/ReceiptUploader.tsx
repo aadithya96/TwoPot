@@ -36,7 +36,10 @@ export function ReceiptUploader({ value, onChange }: ReceiptUploaderProps) {
       { householdId, file },
       {
         onSuccess: (url) => onChange(url),
-        onError: () => setError('Upload failed'),
+        onError: (err) => {
+          console.error('Receipt upload failed', err)
+          setError(err instanceof Error && err.message ? err.message : 'Upload failed')
+        },
       }
     )
   }

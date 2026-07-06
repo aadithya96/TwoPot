@@ -1114,22 +1114,11 @@ $$;
 
 ### 8.1 Supabase Storage bucket
 
-```sql
--- In Supabase Dashboard: Storage → Create bucket
--- Name: receipts
--- Public: false (private bucket, serve via signed URLs)
-```
-
-```ts
-// Storage policy (via Supabase Dashboard or SQL)
--- Allow household members to upload/read receipts
-insert into storage.policies (name, bucket_id, operation, definition)
-values
-  ('household upload', 'receipts', 'INSERT',
-   'auth.uid() is not null'),
-  ('household read', 'receipts', 'SELECT',
-   'auth.uid() is not null');
-```
+The private `receipts` bucket and its RLS policies are provisioned by
+`supabase/migrations/029_receipts_bucket.sql` (applied via `supabase db push`),
+so no manual dashboard step is needed. Access is scoped to members of the
+household whose id prefixes each object path (`${household_id}/${uuid}.ext`),
+reusing the same `is_household_member()` helper as the table policies.
 
 ### 8.2 Upload hook
 
@@ -1168,8 +1157,8 @@ export function useReceiptUpload() {
 
 ### Todo — Receipt Uploads
 
-- [ ] Create `receipts` bucket in Supabase Storage (private)
-- [ ] Set storage RLS policies
+- [x] Create `receipts` bucket in Supabase Storage (private) — migration `029_receipts_bucket.sql`
+- [x] Set storage RLS policies — migration `029_receipts_bucket.sql`
 - [ ] Install `browser-image-compression` npm package
 - [ ] Build `ReceiptUploader` component — tap to camera or file picker
 - [ ] Show upload progress indicator
