@@ -20,12 +20,19 @@ const CORS_HEADERS = {
 
 const JSON_HEADERS = { ...CORS_HEADERS, 'Content-Type': 'application/json' }
 
+/** A single line item on a receipt or order screenshot. */
+interface ReceiptItem {
+  name: string
+  priceRupees: number | null
+}
+
 /** Structured fields extracted from a receipt or order-screenshot image. */
 interface ReceiptScan {
   amountRupees: number | null
   date: string | null
   merchant: string | null
   category: string | null
+  items: ReceiptItem[]
 }
 
 /**
@@ -35,7 +42,8 @@ interface ReceiptScan {
  */
 function buildExtractionPrompt(categories: string[]): string {
   const shape =
-    '{"amountRupees": number|null, "date": string|null, "merchant": string|null, "category": string|null}'
+    '{"amountRupees": number|null, "date": string|null, "merchant": string|null, ' +
+    '"category": string|null, "items": [{"name": string, "priceRupees": number|null}]}'
   const categoryLine =
     categories.length > 0
       ? `"category" MUST be exactly one of these names (or null if none fit): ${categories.join(', ')}. `
@@ -44,21 +52,42 @@ function buildExtractionPrompt(categories: string[]): string {
     'Extract details from this image. It is either a paper receipt or a screenshot of an ' +
     'online order (e.g. Blinkit, Swiggy, Zomato, Amazon, Instamart). ' +
     `Respond with ONLY a JSON object (no markdown, no prose) of the form ${shape}. ` +
-    '"amountRupees" is the grand total actually paid, as a number in rupees (e.g. 1234.50). ' +
+    '"amountRupees" is the grand total actually paid (including delivery, taxes and discounts), ' +
+    'as a number in rupees (e.g. 1234.50). ' +
     '"date" is the order or purchase date in ISO YYYY-MM-DD format. ' +
     '"merchant" is the store, restaurant, or app name. ' +
     categoryLine +
-    'Use null for any value not clearly visible.'
+    '"items" is the list of purchased line items, each with its "name" (short, human-readable, ' +
+    'including quantity if shown, e.g. "Milk 1L x2") and "priceRupees" (the line total for that ' +
+    'item in rupees, or null if not shown). Do NOT include delivery fees, taxes, tips, or ' +
+    'discounts as items. Return an empty array if no line items are visible. ' +
+    'Use null for any scalar value not clearly visible.'
   )
+}
+
+/** Coerces a raw model value into a finite positive rupee amount, or null. */
+function toRupees(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+
+/** Parses the "items" array from model output, dropping malformed entries. */
+function parseItems(value: unknown): ReceiptItem[] {
+  if (!Array.isArray(value)) return []
+  const items: ReceiptItem[] = []
+  for (const entry of value) {
+    if (entry && typeof entry === 'object' && typeof (entry as ReceiptItem).name === 'string') {
+      const name = (entry as ReceiptItem).name.trim()
+      if (name !== '') items.push({ name, priceRupees: toRupees((entry as ReceiptItem).priceRupees) })
+    }
+  }
+  return items
 }
 
 /** Strips optional ```json fences and parses the model output into a ReceiptScan. */
 function parseModelJson(text: string, categories: string[]): ReceiptScan {
   const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
   const parsed = JSON.parse(cleaned) as Partial<ReceiptScan>
-  const amount = typeof parsed.amountRupees === 'number' && Number.isFinite(parsed.amountRupees)
-    ? parsed.amountRupees
-    : null
+  const amount = toRupees(parsed.amountRupees)
   const date = typeof parsed.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(parsed.date)
     ? parsed.date
     : null
@@ -74,7 +103,7 @@ function parseModelJson(text: string, categories: string[]): ReceiptScan {
       : categories.length > 0
         ? categories.find((name) => name.toLowerCase() === rawCategory.toLowerCase()) ?? null
         : rawCategory
-  return { amountRupees: amount, date, merchant, category }
+  return { amountRupees: amount, date, merchant, category, items: parseItems(parsed.items) }
 }
 
 Deno.serve(async (req) => {
@@ -127,7 +156,7 @@ Deno.serve(async (req) => {
     },
     body: JSON.stringify({
       model: ANTHROPIC_MODEL,
-      max_tokens: 300,
+      max_tokens: 1500,
       messages: [
         {
           role: 'user',

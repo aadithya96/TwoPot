@@ -5,6 +5,7 @@ import {
   Avatar,
   Box,
   Button,
+  Checkbox,
   Chip,
   Collapse,
   Drawer,
@@ -22,6 +23,7 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import AddPhotoAlternateOutlinedIcon from '@mui/icons-material/AddPhotoAlternateOutlined'
 import { useSnackbar } from 'notistack'
 import { AmountField, CategoryPicker, SplitSelector } from '@/components/forms'
+import { formatINR } from '@/lib/currency'
 import { expenseSchema, type ExpenseFormValues } from './expenseSchema'
 import { useAddExpense, useUpdateExpense } from './useExpenses'
 import { useScanReceipt } from './useScanReceipt'
@@ -35,6 +37,7 @@ import { useVisualViewport } from '@/hooks/useVisualViewport'
 import { useHouseholdStore } from '@/stores/householdStore'
 import { useCurrentUser } from '@/features/auth'
 import { useIncomeSplit } from '@/features/splitting'
+import { itemisedAmountPaise, itemisedDescription, type ScannedItem } from './scannedItems'
 import type { Category } from '@/types/app'
 
 export interface AddExpenseSheetProps {
@@ -81,8 +84,23 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
   const [quickText, setQuickText] = useState('')
   const [debouncedDescription, setDebouncedDescription] = useState('')
   const quickImageInputRef = useRef<HTMLInputElement>(null)
+  // Line items parsed from a scanned receipt/order screenshot. Transient UI
+  // state (not persisted): they drive the Amount and Description, and unticking
+  // one removes it from both. `scanTotalRupees` is the model's grand total,
+  // which keeps delivery/taxes in the amount even as items are toggled off.
+  const [scannedItems, setScannedItems] = useState<ScannedItem[]>([])
+  const [scanTotalRupees, setScanTotalRupees] = useState<number | null>(null)
 
   useBackButton(open, onClose)
+
+  // Drop any scanned line items when the sheet is closed (cancel/back), so a
+  // reopened sheet never shows a stale checklist from a previous image.
+  useEffect(() => {
+    if (!open) {
+      setScannedItems([])
+      setScanTotalRupees(null)
+    }
+  }, [open])
 
   const { control, handleSubmit, watch, reset, getValues, setValue } = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
@@ -135,29 +153,70 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
     }
   }, [open, expenseId, incomeSplitEnabled, incomeSplitPctA, getValues, setValue])
 
-  // Scan a freshly uploaded receipt and prefill only fields the user hasn't
-  // already set, so it never overwrites manual input. Failures are non-fatal —
-  // the photo stays attached and the form can be completed by hand.
+  // Recompute Amount and Description from the currently-included line items.
+  // Amount starts from the scanned grand total (so delivery/taxes are kept) and
+  // subtracts any excluded items; when there's no grand total it's the sum of
+  // included item prices. Description is the included item names.
+  const applyItemsToForm = (items: ScannedItem[], totalRupees: number | null) => {
+    setValue('amount', itemisedAmountPaise(items, totalRupees), { shouldValidate: true })
+    const description = itemisedDescription(items)
+    if (description !== '') {
+      setValue('description', description, { shouldValidate: true })
+    }
+  }
+
+  // Toggle whether a scanned item is included, then re-derive amount/description.
+  const toggleScannedItem = (index: number) => {
+    setScannedItems((prev) => {
+      const next = prev.map((item, i) => (i === index ? { ...item, included: !item.included } : item))
+      applyItemsToForm(next, scanTotalRupees)
+      return next
+    })
+  }
+
+  // Scan a freshly uploaded receipt/order screenshot and prefill the form.
+  // When line items are found they drive the amount and description (and become
+  // an editable checklist); otherwise we fall back to prefilling only the empty
+  // fields so manual input is never overwritten. Failures are non-fatal — the
+  // photo stays attached and the form can be completed by hand.
   const scanAndPrefill = async (receiptUrl: string) => {
     try {
       const result = await scanReceipt.mutateAsync({ imageUrl: receiptUrl, categories })
       const filled: string[] = []
-      if (result.amountRupees && getValues('amount') === 0) {
-        setValue('amount', Math.round(result.amountRupees * 100), { shouldValidate: true })
-        filled.push('amount')
-      }
+
       if (result.date) {
         setValue('date', result.date, { shouldValidate: true })
         filled.push('date')
-      }
-      if (result.merchant && !getValues('description')?.trim()) {
-        setValue('description', result.merchant, { shouldValidate: true })
-        filled.push('description')
       }
       if (result.categoryId && !getValues('categoryId')) {
         setValue('categoryId', result.categoryId, { shouldValidate: true })
         filled.push('category')
       }
+
+      if (result.items.length > 0) {
+        const items: ScannedItem[] = result.items.map((item) => ({
+          name: item.name,
+          priceRupees: item.priceRupees ?? 0,
+          included: true,
+        }))
+        setScannedItems(items)
+        setScanTotalRupees(result.amountRupees)
+        applyItemsToForm(items, result.amountRupees)
+        filled.push('items', 'amount')
+      } else {
+        // No line items — behave like a simple receipt scan.
+        setScannedItems([])
+        setScanTotalRupees(null)
+        if (result.amountRupees && getValues('amount') === 0) {
+          setValue('amount', Math.round(result.amountRupees * 100), { shouldValidate: true })
+          filled.push('amount')
+        }
+        if (result.merchant && !getValues('description')?.trim()) {
+          setValue('description', result.merchant, { shouldValidate: true })
+          filled.push('description')
+        }
+      }
+
       enqueueSnackbar(
         filled.length > 0 ? `Filled ${filled.join(', ')} from image` : 'No details found in image',
         { variant: filled.length > 0 ? 'success' : 'info' }
@@ -222,6 +281,8 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
       }
 
       reset(DEFAULT_VALUES)
+      setScannedItems([])
+      setScanTotalRupees(null)
       onClose()
     },
     // Surface validation failures so the primary button never appears to do
@@ -349,6 +410,70 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
               />
             )}
           />
+
+          {scannedItems.length > 0 && (
+            <Box>
+              <Stack
+                direction="row"
+                sx={{ alignItems: 'baseline', justifyContent: 'space-between', mb: 0.5 }}
+              >
+                <Typography variant="labelLarge">Items from image</Typography>
+                <Typography variant="bodySmall" color="text.secondary">
+                  Untick to remove & reduce the total
+                </Typography>
+              </Stack>
+              <Stack
+                divider={<Box sx={{ borderBottom: 1, borderColor: 'divider' }} />}
+                sx={{
+                  border: 1,
+                  borderColor: 'divider',
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                }}
+              >
+                {scannedItems.map((item, index) => (
+                  <Stack
+                    key={index}
+                    direction="row"
+                    onClick={() => toggleScannedItem(index)}
+                    sx={{
+                      alignItems: 'center',
+                      gap: 1,
+                      px: 1,
+                      py: 0.5,
+                      cursor: 'pointer',
+                      '&:hover': { bgcolor: 'action.hover' },
+                    }}
+                  >
+                    <Checkbox
+                      checked={item.included}
+                      size="small"
+                      sx={{ p: 0.5, pointerEvents: 'none' }}
+                      slotProps={{ input: { readOnly: true, 'aria-label': `Include ${item.name}` } }}
+                    />
+                    <Typography
+                      variant="bodyMedium"
+                      sx={{
+                        flex: 1,
+                        textDecoration: item.included ? 'none' : 'line-through',
+                        color: item.included ? 'text.primary' : 'text.disabled',
+                      }}
+                    >
+                      {item.name}
+                    </Typography>
+                    {item.priceRupees > 0 && (
+                      <Typography
+                        variant="bodyMedium"
+                        color={item.included ? 'text.secondary' : 'text.disabled'}
+                      >
+                        {formatINR(Math.round(item.priceRupees * 100))}
+                      </Typography>
+                    )}
+                  </Stack>
+                ))}
+              </Stack>
+            </Box>
+          )}
 
           <Controller
             name="categoryId"

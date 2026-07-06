@@ -2,9 +2,17 @@ import { useMutation, type UseMutationResult } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { Category } from '@/types/app'
 
+/** A single purchased line item extracted from a receipt or order screenshot. */
+export interface ReceiptItem {
+  /** Short human-readable item name (may include quantity, e.g. "Milk 1L x2"). */
+  name: string
+  /** Line total for the item in rupees, or null if the price wasn't shown. */
+  priceRupees: number | null
+}
+
 /** Structured fields returned by the `scan-receipt` edge function, resolved to a category id. */
 export interface ReceiptScan {
-  /** Total amount on the receipt/order, in rupees, or null if not detected. */
+  /** Grand total on the receipt/order (incl. fees/taxes), in rupees, or null if not detected. */
   amountRupees: number | null
   /** Purchase date as ISO "YYYY-MM-DD", or null if not detected. */
   date: string | null
@@ -12,6 +20,8 @@ export interface ReceiptScan {
   merchant: string | null
   /** Best-matching category id from the household's categories, or null. */
   categoryId: string | null
+  /** Purchased line items (excludes fees/taxes); empty when none were detected. */
+  items: ReceiptItem[]
 }
 
 /** Raw response shape from the `scan-receipt` edge function. */
@@ -20,6 +30,7 @@ interface ScanReceiptResponse {
   date: string | null
   merchant: string | null
   category: string | null
+  items?: ReceiptItem[]
 }
 
 /** Input for {@link useScanReceipt}: the uploaded image URL plus the household's categories. */
@@ -52,6 +63,7 @@ export function useScanReceipt(): UseMutationResult<ReceiptScan, Error, ScanRece
         date: data.date,
         merchant: data.merchant,
         categoryId: match?.id ?? null,
+        items: Array.isArray(data.items) ? data.items : [],
       }
     },
   })
