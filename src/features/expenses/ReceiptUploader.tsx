@@ -1,6 +1,7 @@
-import { useId, useRef, useState } from 'react'
-import { Box, IconButton, LinearProgress, Avatar } from '@mui/material'
+import { useRef, useState } from 'react'
+import { Box, IconButton, LinearProgress, Avatar, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material'
 import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined'
+import PhotoLibraryOutlinedIcon from '@mui/icons-material/PhotoLibraryOutlined'
 import ClearOutlinedIcon from '@mui/icons-material/ClearOutlined'
 import { useHouseholdStore } from '@/stores/householdStore'
 import { useUploadReceipt } from './useReceiptUpload'
@@ -12,12 +13,15 @@ export interface ReceiptUploaderProps {
 }
 
 /**
- * Camera-capture button for attaching a receipt photo to an expense: compresses the
- * chosen image, uploads it via `useUploadReceipt`, and shows a thumbnail preview once done.
+ * Button for attaching a receipt photo to an expense. Offers a menu to either
+ * take a new photo with the camera or pick an existing image from the gallery,
+ * then compresses and uploads the chosen image via `useUploadReceipt` and shows
+ * a thumbnail preview once done.
  */
 export function ReceiptUploader({ value, onChange }: ReceiptUploaderProps) {
-  const inputId = useId()
-  const inputRef = useRef<HTMLInputElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const galleryInputRef = useRef<HTMLInputElement>(null)
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
   const householdId = useHouseholdStore((state) => state.householdId)
   const { mutate, isPending } = useUploadReceipt()
   const [error, setError] = useState<string | null>(null)
@@ -39,6 +43,11 @@ export function ReceiptUploader({ value, onChange }: ReceiptUploaderProps) {
 
   const handleRemove = () => {
     onChange(null)
+  }
+
+  const pickFrom = (ref: React.RefObject<HTMLInputElement | null>) => {
+    setMenuAnchor(null)
+    ref.current?.click()
   }
 
   if (value) {
@@ -72,21 +81,35 @@ export function ReceiptUploader({ value, onChange }: ReceiptUploaderProps) {
   return (
     <Box sx={{ width: 64 }}>
       <input
-        ref={inputRef}
-        id={inputId}
+        ref={cameraInputRef}
         type="file"
         accept="image/*"
         capture="environment"
         hidden
         onChange={handleFileChange}
       />
+      <input ref={galleryInputRef} type="file" accept="image/*" hidden onChange={handleFileChange} />
       <IconButton
         aria-label="Add receipt photo"
-        onClick={() => inputRef.current?.click()}
+        onClick={(event) => setMenuAnchor(event.currentTarget)}
         disabled={isPending}
       >
         <PhotoCameraOutlinedIcon />
       </IconButton>
+      <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
+        <MenuItem onClick={() => pickFrom(cameraInputRef)}>
+          <ListItemIcon>
+            <PhotoCameraOutlinedIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Take photo</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => pickFrom(galleryInputRef)}>
+          <ListItemIcon>
+            <PhotoLibraryOutlinedIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Choose from gallery</ListItemText>
+        </MenuItem>
+      </Menu>
       {isPending && <LinearProgress sx={{ width: 48 }} />}
       {error && (
         <Box component="span" sx={{ color: 'error.main', fontSize: '0.75rem' }}>
