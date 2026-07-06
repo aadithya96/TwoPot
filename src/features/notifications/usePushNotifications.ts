@@ -1,8 +1,40 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
 import type { PushSubscriptionRow } from '@/types/app'
+
+/**
+ * The stored subscription is "one active device per user": whichever device
+ * used the app most recently owns the row (see 028_push_single_active.sql).
+ * `usePushSubscriptionRefresh` re-asserts the local device on every app open,
+ * so a previously displaced device becomes active again just by reopening.
+ */
+
+/**
+ * Upserts this browser's push subscription as the user's active one. The
+ * `user_id` conflict target relies on 028_push_single_active.sql's unique
+ * constraint (which also deduped the per-device rows that existed before).
+ */
+async function saveSubscription(userId: string, subscription: PushSubscription): Promise<void> {
+  const keys = subscription.toJSON().keys
+  const p256dh = keys?.p256dh
+  const auth = keys?.auth
+  if (!p256dh || !auth) {
+    throw new Error('Push subscription is missing encryption keys.')
+  }
+
+  const { error } = await supabase.from('push_subscriptions').upsert(
+    {
+      user_id: userId,
+      endpoint: subscription.endpoint,
+      p256dh,
+      auth,
+    },
+    { onConflict: 'user_id' }
+  )
+  if (error) throw error
+}
 
 function base64UrlToUint8Array(base64Url: string): Uint8Array<ArrayBuffer> {
   const padding = '='.repeat((4 - (base64Url.length % 4)) % 4)
@@ -58,48 +90,91 @@ export async function subscribeToPush(userId: string): Promise<void> {
     applicationServerKey: base64UrlToUint8Array(vapidKey),
   })
 
-  const keys = subscription.toJSON().keys
-  const p256dh = keys?.p256dh
-  const auth = keys?.auth
-  if (!p256dh || !auth) {
-    throw new Error('Push subscription is missing encryption keys.')
-  }
-
-  // Conflict target must be `endpoint`: that is the table's only unique
-  // constraint (a user can have several devices, so `user_id` is not unique).
-  // Upserting on `user_id` fails with Postgres 42P10 ("no unique or exclusion
-  // constraint matching the ON CONFLICT specification"), which silently left
-  // every user without a stored subscription — so no push ever arrived.
-  // Re-subscribing on the same device refreshes that device's row in place.
-  const { error } = await supabase.from('push_subscriptions').upsert(
-    {
-      user_id: userId,
-      endpoint: subscription.endpoint,
-      p256dh,
-      auth,
-    },
-    { onConflict: 'endpoint' }
-  )
-  if (error) throw error
+  await saveSubscription(userId, subscription)
 }
 
-/** Unsubscribes from browser push and removes the stored `push_subscriptions` row. */
+/**
+ * Best-effort: if this browser already holds a push subscription and
+ * permission is still granted, re-upsert it so this device becomes the
+ * user's active subscription. Returns whether a subscription was saved.
+ */
+export async function refreshPushSubscription(userId: string): Promise<boolean> {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false
+  if (Notification.permission !== 'granted') return false
+
+  try {
+    const registration = await navigator.serviceWorker.ready
+    const subscription = await registration.pushManager.getSubscription()
+    if (!subscription) return false
+    await saveSubscription(userId, subscription)
+    return true
+  } catch {
+    // Losing the takeover is fine; the next app open retries.
+    return false
+  }
+}
+
+/**
+ * Re-asserts this device as the active push subscription once per app open
+ * (latest-active-device-wins; see module docs).
+ */
+export function usePushSubscriptionRefresh(userId: string | undefined): void {
+  const queryClient = useQueryClient()
+
+  useEffect(() => {
+    if (!userId) return
+    void refreshPushSubscription(userId).then((refreshed) => {
+      if (refreshed) {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.pushSubscription(userId) })
+      }
+    })
+  }, [userId, queryClient])
+}
+
+/** This browser's own push subscription endpoint, or null when none exists. */
+export function useLocalPushEndpoint(): UseQueryResult<string | null> {
+  return useQuery({
+    queryKey: queryKeys.localPushEndpoint,
+    queryFn: async (): Promise<string | null> => {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return null
+      const registration = await navigator.serviceWorker.ready
+      const subscription = await registration.pushManager.getSubscription()
+      return subscription?.endpoint ?? null
+    },
+    staleTime: Infinity,
+  })
+}
+
+/**
+ * Unsubscribes this browser from push. The stored row is only deleted when it
+ * belongs to this device — another device's active subscription is left alone.
+ */
 export async function unsubscribeFromPush(userId: string): Promise<void> {
+  let endpoint: string | null = null
   if ('serviceWorker' in navigator) {
     const registration = await navigator.serviceWorker.ready
     const subscription = await registration.pushManager.getSubscription()
     if (subscription) {
+      endpoint = subscription.endpoint
       await subscription.unsubscribe()
     }
   }
+  if (!endpoint) return
 
-  const { error } = await supabase.from('push_subscriptions').delete().eq('user_id', userId)
+  const { error } = await supabase
+    .from('push_subscriptions')
+    .delete()
+    .eq('user_id', userId)
+    .eq('endpoint', endpoint)
   if (error) throw error
 }
 
 /**
  * Convenience hook bundling subscription state with subscribe/unsubscribe
  * actions wired to invalidate the cached subscription row on change.
+ * `isSubscribed` means *this device* holds the user's active subscription —
+ * a device displaced by another one shows as unsubscribed, and enabling
+ * again simply takes the active slot back.
  */
 export function usePushNotificationActions(userId: string | undefined): {
   isSubscribed: boolean
@@ -109,14 +184,23 @@ export function usePushNotificationActions(userId: string | undefined): {
 } {
   const queryClient = useQueryClient()
   const { data, isLoading } = usePushSetup(userId)
+  const { data: localEndpoint, isLoading: isEndpointLoading } = useLocalPushEndpoint()
   const [isWorking, setIsWorking] = useState(false)
+
+  const invalidate = async (): Promise<void> => {
+    if (!userId) return
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.pushSubscription(userId) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.localPushEndpoint }),
+    ])
+  }
 
   const subscribe = async (): Promise<void> => {
     if (!userId) return
     setIsWorking(true)
     try {
       await subscribeToPush(userId)
-      await queryClient.invalidateQueries({ queryKey: queryKeys.pushSubscription(userId) })
+      await invalidate()
     } finally {
       setIsWorking(false)
     }
@@ -127,11 +211,16 @@ export function usePushNotificationActions(userId: string | undefined): {
     setIsWorking(true)
     try {
       await unsubscribeFromPush(userId)
-      await queryClient.invalidateQueries({ queryKey: queryKeys.pushSubscription(userId) })
+      await invalidate()
     } finally {
       setIsWorking(false)
     }
   }
 
-  return { isSubscribed: Boolean(data), isLoading: isLoading || isWorking, subscribe, unsubscribe }
+  return {
+    isSubscribed: Boolean(data && localEndpoint && data.endpoint === localEndpoint),
+    isLoading: isLoading || isEndpointLoading || isWorking,
+    subscribe,
+    unsubscribe,
+  }
 }

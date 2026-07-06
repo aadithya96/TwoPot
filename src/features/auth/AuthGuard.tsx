@@ -2,6 +2,7 @@ import { Navigate } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { AppShellSkeleton } from '@/components/layout/AppShellSkeleton'
 import { RealtimeProvider } from '@/components/RealtimeProvider'
+import { usePushSubscriptionRefresh } from '@/features/notifications/usePushNotifications'
 import { signOut, useCurrentUser, useSession } from './useAuth'
 import { useHousehold } from './useHousehold'
 
@@ -15,6 +16,10 @@ export function AuthGuard() {
   const { data: session, isLoading: isSessionLoading } = useSession()
   const { data: household, isLoading: isHouseholdLoading } = useHousehold()
   const { data: profile } = useCurrentUser()
+
+  // Latest-active-device push: re-assert this device's subscription (if any)
+  // as the user's active one on each app open.
+  usePushSubscriptionRefresh(profile?.id)
 
   if (isSessionLoading || (session && isHouseholdLoading)) {
     return <AppShellSkeleton />
