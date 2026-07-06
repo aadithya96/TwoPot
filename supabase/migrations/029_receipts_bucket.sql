@@ -1,4 +1,4 @@
--- 028_receipts_bucket.sql
+-- 029_receipts_bucket.sql
 -- Create the private `receipts` storage bucket used for expense receipt photos
 -- and order screenshots (Blinkit/Swiggy, etc.), and restrict access to members
 -- of the household whose id prefixes the object path. Uploads use the layout

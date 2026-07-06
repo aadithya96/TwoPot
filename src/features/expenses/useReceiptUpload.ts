@@ -24,7 +24,7 @@ export function useUploadReceipt(): UseMutationResult<string, Error, UploadRecei
       // Compress to keep uploads small, but fall back to the original file if
       // the browser can't decode it (e.g. some HEIC gallery images), so a
       // compression hiccup never blocks attaching the photo.
-      let compressed: Blob = file
+      let compressed: Blob
       try {
         compressed = await imageCompression(file, COMPRESSION_OPTIONS)
       } catch {
