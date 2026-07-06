@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
@@ -19,11 +19,13 @@ import {
   IconButton,
 } from '@mui/material'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
+import AddPhotoAlternateOutlinedIcon from '@mui/icons-material/AddPhotoAlternateOutlined'
 import { useSnackbar } from 'notistack'
 import { AmountField, CategoryPicker, SplitSelector } from '@/components/forms'
 import { expenseSchema, type ExpenseFormValues } from './expenseSchema'
 import { useAddExpense, useUpdateExpense } from './useExpenses'
 import { useScanReceipt } from './useScanReceipt'
+import { useUploadReceipt } from './useReceiptUpload'
 import { useParseExpense } from './useParseExpense'
 import { useCategorySuggestionHistory } from './useCategorySuggestion'
 import { suggestCategory } from './categorySuggestion'
@@ -72,11 +74,13 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
   const addExpense = useAddExpense()
   const updateExpense = useUpdateExpense()
   const scanReceipt = useScanReceipt()
+  const uploadReceipt = useUploadReceipt()
   const parseExpense = useParseExpense()
   const { data: suggestionHistory } = useCategorySuggestionHistory(householdId ?? undefined)
   const { enqueueSnackbar } = useSnackbar()
   const [quickText, setQuickText] = useState('')
   const [debouncedDescription, setDebouncedDescription] = useState('')
+  const quickImageInputRef = useRef<HTMLInputElement>(null)
 
   useBackButton(open, onClose)
 
@@ -136,7 +140,7 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
   // the photo stays attached and the form can be completed by hand.
   const scanAndPrefill = async (receiptUrl: string) => {
     try {
-      const result = await scanReceipt.mutateAsync(receiptUrl)
+      const result = await scanReceipt.mutateAsync({ imageUrl: receiptUrl, categories })
       const filled: string[] = []
       if (result.amountRupees && getValues('amount') === 0) {
         setValue('amount', Math.round(result.amountRupees * 100), { shouldValidate: true })
@@ -150,12 +154,32 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
         setValue('description', result.merchant, { shouldValidate: true })
         filled.push('description')
       }
+      if (result.categoryId && !getValues('categoryId')) {
+        setValue('categoryId', result.categoryId, { shouldValidate: true })
+        filled.push('category')
+      }
       enqueueSnackbar(
-        filled.length > 0 ? `Filled ${filled.join(', ')} from receipt` : 'No details found on receipt',
+        filled.length > 0 ? `Filled ${filled.join(', ')} from image` : 'No details found in image',
         { variant: filled.length > 0 ? 'success' : 'info' }
       )
     } catch {
-      enqueueSnackbar('Could not scan receipt — enter details manually', { variant: 'warning' })
+      enqueueSnackbar('Could not scan image — enter details manually', { variant: 'warning' })
+    }
+  }
+
+  // Upload an order screenshot (Blinkit, Swiggy, …) chosen in the quick-add
+  // section, attach it as the receipt, then scan it to auto-fill and categorise
+  // the expense. Reuses the same upload+scan path as the receipt uploader.
+  const handleQuickImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file || !householdId) return
+    try {
+      const url = await uploadReceipt.mutateAsync({ householdId, file })
+      setValue('receiptUrl', url)
+      await scanAndPrefill(url)
+    } catch {
+      enqueueSnackbar('Could not upload that image — enter details manually', { variant: 'warning' })
     }
   }
 
@@ -249,40 +273,61 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
         </Typography>
 
         {!expenseId && (
-          <TextField
-            value={quickText}
-            onChange={(event) => setQuickText(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault()
-                void handleQuickAdd()
-              }
-            }}
-            placeholder='Type it naturally, e.g. "250 groceries yesterday"'
-            disabled={parseExpense.isPending}
-            sx={{ mb: 2.5 }}
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <AutoAwesomeIcon fontSize="small" color="primary" />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="Fill from note"
-                      onClick={() => void handleQuickAdd()}
-                      disabled={parseExpense.isPending || quickText.trim() === ''}
-                      edge="end"
-                    >
-                      {parseExpense.isPending ? <CircularProgress size={20} /> : <AutoAwesomeIcon />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              },
-            }}
-          />
+          <Box sx={{ mb: 2.5 }}>
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-start' }}>
+              <TextField
+                fullWidth
+                value={quickText}
+                onChange={(event) => setQuickText(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault()
+                    void handleQuickAdd()
+                  }
+                }}
+                placeholder='Type it naturally, e.g. "250 groceries yesterday"'
+                disabled={parseExpense.isPending}
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="Fill from note"
+                          onClick={() => void handleQuickAdd()}
+                          disabled={parseExpense.isPending || quickText.trim() === ''}
+                          edge="end"
+                        >
+                          {parseExpense.isPending ? <CircularProgress size={20} /> : <AutoAwesomeIcon />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              />
+              <input
+                ref={quickImageInputRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(event) => void handleQuickImage(event)}
+              />
+              <IconButton
+                aria-label="Add an order screenshot to auto-fill"
+                onClick={() => quickImageInputRef.current?.click()}
+                disabled={uploadReceipt.isPending || scanReceipt.isPending}
+                sx={{ mt: 0.5 }}
+              >
+                {uploadReceipt.isPending || scanReceipt.isPending ? (
+                  <CircularProgress size={20} />
+                ) : (
+                  <AddPhotoAlternateOutlinedIcon />
+                )}
+              </IconButton>
+            </Stack>
+            <Typography variant="bodySmall" color="text.secondary" sx={{ mt: 0.75, display: 'block' }}>
+              Type it, or add a screenshot of a Blinkit / Swiggy order to auto-fill and categorise.
+            </Typography>
+          </Box>
         )}
 
         <Stack spacing={2.5}>
@@ -450,6 +495,7 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
               render={({ field, fieldState }) => (
                 <TextField
                   {...field}
+                  required
                   value={field.value ?? ''}
                   label="Description"
                   error={Boolean(fieldState.error)}

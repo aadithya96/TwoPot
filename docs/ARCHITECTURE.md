@@ -100,7 +100,7 @@ Deno functions in `supabase/functions/`, deployed by the CI workflow:
   brokers sell the same AMFI schemes, so the scheme code + units held is
   enough to track a holding's market value without broker credentials.
 - `send-push` — sends Web Push to a user's subscriptions; prunes expired ones.
-- `scan-receipt` — vision OCR of a receipt image (Anthropic) → amount/date/merchant.
+- `scan-receipt` — vision OCR of a receipt image or order screenshot (Anthropic) → amount/date/merchant/category.
 - `parse-expense` — natural-language note (Anthropic) → structured expense fields.
 
 `scan-receipt` and `parse-expense` need an `ANTHROPIC_API_KEY`; push functions
