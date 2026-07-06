@@ -35,11 +35,9 @@ export function usePushSetup(userId: string | undefined): UseQueryResult<PushSub
 /**
  * Registers for browser push via `registration.pushManager.subscribe` using
  * `VITE_VAPID_PUBLIC_KEY`, and persists the subscription to
- * `push_subscriptions`. Note: the corresponding service-worker `push` event
- * handler (to display notifications) is not wired here — that requires a
- * custom workbox build step (`injectManifest` + a hand-written sw.ts) which
- * is out of scope; the hook for that would live in `vite.config.ts`'s
- * `VitePWA` options and a `src/sw.ts` push/notificationclick listener.
+ * `push_subscriptions`. The service worker's `push`/`notificationclick`
+ * handlers that display the incoming notification live in `src/sw.ts`
+ * (injectManifest build).
  */
 export async function subscribeToPush(userId: string): Promise<void> {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
@@ -67,6 +65,12 @@ export async function subscribeToPush(userId: string): Promise<void> {
     throw new Error('Push subscription is missing encryption keys.')
   }
 
+  // Conflict target must be `endpoint`: that is the table's only unique
+  // constraint (a user can have several devices, so `user_id` is not unique).
+  // Upserting on `user_id` fails with Postgres 42P10 ("no unique or exclusion
+  // constraint matching the ON CONFLICT specification"), which silently left
+  // every user without a stored subscription — so no push ever arrived.
+  // Re-subscribing on the same device refreshes that device's row in place.
   const { error } = await supabase.from('push_subscriptions').upsert(
     {
       user_id: userId,
@@ -74,7 +78,7 @@ export async function subscribeToPush(userId: string): Promise<void> {
       p256dh,
       auth,
     },
-    { onConflict: 'user_id' }
+    { onConflict: 'endpoint' }
   )
   if (error) throw error
 }

@@ -1,4 +1,4 @@
-import { createContext, useEffect, type ReactNode } from 'react'
+import { createContext, useEffect, useState, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
@@ -24,6 +24,41 @@ export interface RealtimeProviderProps {
  */
 export function RealtimeProvider({ householdId, children }: RealtimeProviderProps) {
   const queryClient = useQueryClient()
+  // Bumped whenever the app returns to the foreground. Including it in the
+  // subscription effect's deps tears down and rebuilds the realtime channels
+  // on a fresh socket — see `handleForeground` below.
+  const [foregroundTick, setForegroundTick] = useState(0)
+
+  // Mobile browsers (iOS Safari especially) suspend the realtime WebSocket
+  // while a PWA is backgrounded and do NOT replay changes missed during the
+  // suspension, so an expense a partner adds while the app is away never
+  // arrives — the list looks stale until the user force-quits and reopens.
+  // On every return to the foreground we (1) refetch active queries so the UI
+  // catches up immediately and (2) rebuild the realtime channels so future
+  // live updates resume on a healthy socket. A short throttle collapses the
+  // burst of visibilitychange/pageshow/focus events a single resume can fire.
+  useEffect(() => {
+    let lastRun = 0
+
+    const handleForeground = (): void => {
+      if (document.visibilityState !== 'visible') return
+      const now = Date.now()
+      if (now - lastRun < 1000) return
+      lastRun = now
+      void queryClient.invalidateQueries()
+      setForegroundTick((tick) => tick + 1)
+    }
+
+    document.addEventListener('visibilitychange', handleForeground)
+    window.addEventListener('pageshow', handleForeground)
+    window.addEventListener('focus', handleForeground)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleForeground)
+      window.removeEventListener('pageshow', handleForeground)
+      window.removeEventListener('focus', handleForeground)
+    }
+  }, [queryClient])
 
   useEffect(() => {
     if (!householdId) return
@@ -58,7 +93,7 @@ export function RealtimeProvider({ householdId, children }: RealtimeProviderProp
         void supabase.removeChannel(channel)
       })
     }
-  }, [householdId, queryClient])
+  }, [householdId, queryClient, foregroundTick])
 
   return <RealtimeContext.Provider value={null}>{children}</RealtimeContext.Provider>
 }
