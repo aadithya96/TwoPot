@@ -178,8 +178,12 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
       const url = await uploadReceipt.mutateAsync({ householdId, file })
       setValue('receiptUrl', url)
       await scanAndPrefill(url)
-    } catch {
-      enqueueSnackbar('Could not upload that image — enter details manually', { variant: 'warning' })
+    } catch (error) {
+      console.error('Quick-add image upload failed', error)
+      const detail = error instanceof Error && error.message ? `: ${error.message}` : ''
+      enqueueSnackbar(`Could not upload that image${detail} — enter details manually`, {
+        variant: 'warning',
+      })
     }
   }
 
