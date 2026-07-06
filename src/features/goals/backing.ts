@@ -2,7 +2,7 @@
 export type GoalBackingType = 'manual' | 'bank_account' | 'mutual_fund'
 
 /** Number of decimal places mutual fund units are tracked at (matches the DB column). */
-export const MF_UNITS_DECIMALS = 4
+const MF_UNITS_DECIMALS = 4
 
 /**
  * Market value (in paise) of a mutual fund holding: units x NAV (rupees).

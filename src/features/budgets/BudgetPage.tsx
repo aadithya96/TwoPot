@@ -22,7 +22,7 @@ function colorForRatio(ratio: number): 'success' | 'warning' | 'error' {
 }
 
 /** Circular ring showing total spend as a percentage of total budget, colored green/amber/red by threshold. */
-export function OverallBudgetRing({ spent, budget }: OverallBudgetRingProps) {
+function OverallBudgetRing({ spent, budget }: OverallBudgetRingProps) {
   const ratio = budget > 0 ? spent / budget : 0
   const percent = Math.round(ratio * 100)
   const color = colorForRatio(ratio)
