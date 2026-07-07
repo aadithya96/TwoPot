@@ -18,9 +18,13 @@ export interface HomeTasksSectionProps {
   members: Profile[]
 }
 
-/** Whether an open item is worth surfacing on Home: high priority, or due within the week (incl. overdue). */
+/**
+ * Whether an open item is worth surfacing on Home: high priority, or due within
+ * the week (incl. overdue). Shopping ("buy") items are excluded -- the home
+ * dashboard is for todos and tasks, not the shopping list.
+ */
 function isUpcomingOrPriority(task: Task, horizon: string): boolean {
-  if (task.done) return false
+  if (task.done || task.kind === 'buy') return false
   if (task.priority === 'high') return true
   return task.due_date != null && task.due_date <= horizon
 }
