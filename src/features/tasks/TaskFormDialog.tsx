@@ -31,7 +31,7 @@ export interface TaskFormDialogProps {
   task?: Task
 }
 
-/** Dialog for creating or editing a todo/task: title, due date, assignee, and priority. */
+/** Dialog for creating or editing a task: title, due date, assignee, and priority. */
 export function TaskFormDialog({
   open,
   onClose,
@@ -63,7 +63,7 @@ export function TaskFormDialog({
   }
 
   const isEditing = Boolean(task)
-  const label = kind === 'task' ? 'task' : kind === 'buy' ? 'item' : 'todo'
+  const label = kind === 'buy' ? 'item' : 'task'
   const trimmedTitle = title.trim()
   const isValid = trimmedTitle.length > 0
   const isPending = createTask.isPending || updateTask.isPending

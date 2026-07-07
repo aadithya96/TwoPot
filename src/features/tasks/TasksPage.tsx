@@ -49,7 +49,7 @@ function TaskSection({
   const openCount = tasks.filter((task) => !task.done).length
 
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
+    <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
       <Stack
         direction="row"
         sx={{ alignItems: 'center', justifyContent: 'space-between', px: 2, py: 1.5 }}
@@ -95,9 +95,9 @@ function TaskSection({
 }
 
 /**
- * Tasks hub: three shared, realtime-synced sections on one page -- quick
- * "Todos", a "Tasks" list, and a "Things to buy" shopping list -- each
- * supporting due dates, an assignee, and a priority.
+ * Tasks hub: two shared, realtime-synced sections on one page -- a "Tasks" list
+ * and a "Things to buy" shopping list -- each supporting due dates, an assignee,
+ * and a priority.
  */
 export function TasksPage() {
   const householdId = useHouseholdStore((state) => state.householdId)
@@ -105,16 +105,15 @@ export function TasksPage() {
   const { data: currentUser } = useCurrentUser()
   const { data: tasks, isLoading } = useTasks(householdId ?? undefined)
 
-  const [dialogKind, setDialogKind] = useState<TaskKind>('todo')
+  const [dialogKind, setDialogKind] = useState<TaskKind>('task')
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined)
   const [dialogOpen, setDialogOpen] = useState(false)
 
   useRealtimeTasks(householdId ?? undefined)
 
-  const { todos, taskItems, buyItems } = useMemo(() => {
+  const { taskItems, buyItems } = useMemo(() => {
     const all = tasks ?? []
     return {
-      todos: all.filter((task) => task.kind === 'todo').sort(compareTasks),
       taskItems: all.filter((task) => task.kind === 'task').sort(compareTasks),
       buyItems: all.filter((task) => task.kind === 'buy').sort(compareTasks),
     }
@@ -141,17 +140,6 @@ export function TasksPage() {
       </Typography>
 
       <Stack spacing={3}>
-        <TaskSection
-          kind="todo"
-          title="Todos"
-          emptyCopy="No todos yet. Add a quick one to get started."
-          tasks={todos}
-          isLoading={isLoading}
-          householdId={householdId}
-          members={members}
-          onAdd={handleAdd}
-          onEdit={handleEdit}
-        />
         <TaskSection
           kind="task"
           title="Tasks"

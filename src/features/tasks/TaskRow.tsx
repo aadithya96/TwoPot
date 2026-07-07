@@ -34,7 +34,7 @@ function isOverdue(dueDate: string, done: boolean): boolean {
   return dueDate < today
 }
 
-/** A single todo/task row: done checkbox, title, priority/due chips, assignee avatar, overflow menu. */
+/** A single task row: done checkbox, title, priority/due chips, assignee avatar, overflow menu. */
 export function TaskRow({ task, householdId, members, onEdit }: TaskRowProps) {
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null)
   const toggleTask = useToggleTask()
