@@ -48,8 +48,12 @@ export interface ScanReceiptInput {
 export function useScanReceipt(): UseMutationResult<ReceiptScan, Error, ScanReceiptInput> {
   return useMutation({
     mutationFn: async ({ imageUrl, categories }: ScanReceiptInput): Promise<ReceiptScan> => {
+      // Pass today's date so the model can resolve a year-less or ambiguous
+      // receipt date to the correct year instead of guessing (a wrong year files
+      // the expense outside the current month, hiding it from the month views).
+      const today = new Date().toISOString().slice(0, 10)
       const { data, error } = await supabase.functions.invoke<ScanReceiptResponse>('scan-receipt', {
-        body: { imageUrl, categories: categories.map((category) => category.name) },
+        body: { imageUrl, today, categories: categories.map((category) => category.name) },
       })
       if (error) throw error
       if (!data) throw new Error('Empty scan response')

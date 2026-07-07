@@ -184,7 +184,12 @@ export function AddExpenseSheet({ open, onClose, categories, initialValues, expe
       const result = await scanReceipt.mutateAsync({ imageUrl: receiptUrl, categories })
       const filled: string[] = []
 
-      if (result.date) {
+      // Apply the scanned date only when it isn't in the future — a future date
+      // is always a misread and would file the expense in a month the user never
+      // opens, making it look like the expense vanished. Otherwise keep today's
+      // default so the new expense stays visible in the current-month views.
+      const today = new Date().toISOString().slice(0, 10)
+      if (result.date && result.date <= today) {
         setValue('date', result.date, { shouldValidate: true })
         filled.push('date')
       }
