@@ -425,6 +425,60 @@ export interface Database {
           },
         ]
       }
+      tasks: {
+        Row: {
+          id: string
+          household_id: string
+          kind: string
+          title: string
+          done: boolean
+          completed_at: string | null
+          due_date: string | null
+          assignee_id: string | null
+          priority: string
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          household_id: string
+          kind?: string
+          title: string
+          done?: boolean
+          completed_at?: string | null
+          due_date?: string | null
+          assignee_id?: string | null
+          priority?: string
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['tasks']['Insert']>
+        Relationships: [
+          {
+            foreignKeyName: 'tasks_household_id_fkey'
+            columns: ['household_id']
+            isOneToOne: false
+            referencedRelation: 'households'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'tasks_assignee_id_fkey'
+            columns: ['assignee_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'tasks_created_by_fkey'
+            columns: ['created_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       settlements: {
         Row: {
           id: string

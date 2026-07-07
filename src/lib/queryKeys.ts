@@ -16,6 +16,7 @@ export const queryKeys = {
   budgetUsage: (householdId: string) => ['budgetUsage', householdId] as const,
   goals: (householdId: string) => ['goals', householdId] as const,
   goalContributions: (goalId: string) => ['goalContributions', goalId] as const,
+  tasks: (householdId: string) => ['tasks', householdId] as const,
   movies: (householdId: string) => ['movies', householdId] as const,
   movieRecommendations: (householdId: string) => ['movieRecommendations', householdId] as const,
   settlement: (householdId: string, periodMonth: string) =>
