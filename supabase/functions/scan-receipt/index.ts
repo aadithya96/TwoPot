@@ -40,7 +40,7 @@ interface ReceiptScan {
  * the model is asked to also pick the single best-matching category so an
  * order screenshot can be categorised automatically.
  */
-function buildExtractionPrompt(categories: string[]): string {
+function buildExtractionPrompt(categories: string[], today: string): string {
   const shape =
     '{"amountRupees": number|null, "date": string|null, "merchant": string|null, ' +
     '"category": string|null, "items": [{"name": string, "priceRupees": number|null}]}'
@@ -54,7 +54,9 @@ function buildExtractionPrompt(categories: string[]): string {
     `Respond with ONLY a JSON object (no markdown, no prose) of the form ${shape}. ` +
     '"amountRupees" is the grand total actually paid (including delivery, taxes and discounts), ' +
     'as a number in rupees (e.g. 1234.50). ' +
-    '"date" is the order or purchase date in ISO YYYY-MM-DD format. ' +
+    `"date" is the order or purchase date in ISO YYYY-MM-DD format. Today is ${today}; the date ` +
+    'must not be in the future. If the year is missing or ambiguous, infer it as the most recent ' +
+    'past date matching the shown day and month. If no date is visible, use null. ' +
     '"merchant" is the store, restaurant, or app name. ' +
     categoryLine +
     '"items" is the list of purchased line items, each with its "name" (short, human-readable, ' +
@@ -122,6 +124,7 @@ Deno.serve(async (req) => {
 
   let imageUrl: string
   let categories: string[]
+  let today: string
   try {
     const body = await req.json()
     imageUrl = body.imageUrl
@@ -129,6 +132,9 @@ Deno.serve(async (req) => {
     categories = Array.isArray(body.categories)
       ? body.categories.filter((name: unknown): name is string => typeof name === 'string')
       : []
+    today = typeof body.today === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(body.today)
+      ? body.today
+      : new Date().toISOString().slice(0, 10)
   } catch {
     return new Response(JSON.stringify({ error: 'Expected JSON body with an "imageUrl" string' }), {
       status: 400,
@@ -162,7 +168,7 @@ Deno.serve(async (req) => {
           role: 'user',
           content: [
             { type: 'image', source: { type: 'base64', media_type: mediaType, data: imageData } },
-            { type: 'text', text: buildExtractionPrompt(categories) },
+            { type: 'text', text: buildExtractionPrompt(categories, today) },
           ],
         },
       ],
