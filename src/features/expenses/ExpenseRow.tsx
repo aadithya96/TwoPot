@@ -47,31 +47,44 @@ export function ExpenseRow({ expense, currentUserId, householdId, month, categor
   const [detailMounted, setDetailMounted] = useState(false)
   const deleteExpense = useDeleteExpense()
 
-  const openDetail = () => {
+  const { ref, offsetX, isRevealed, isDragging, reset } = useSwipeToDelete()
+
+  const handleRowClick = () => {
+    // A revealed row's tap target becomes "dismiss the delete action" rather
+    // than "open the detail sheet", matching the usual swipe-to-reveal idiom.
+    if (isRevealed) {
+      reset()
+      return
+    }
     setDetailMounted(true)
     setDetailOpen(true)
   }
 
-  const { ref, offsetX, isRevealed } = useSwipeToDelete(() => {
+  const handleDelete = () => {
     deleteExpense.mutate({ id: expense.id, householdId, month })
-  })
+    reset()
+  }
 
   const isOwnPersonalExpense = expense.owner === 'personal' && expense.personal_user_id === currentUserId
   const badge = splitLabel(expense)
 
   return (
     <Box sx={{ position: 'relative', overflow: 'hidden' }}>
-      {isRevealed && (
+      {offsetX < 0 && (
         <Box
+          role="button"
+          aria-label="Delete expense"
+          onClick={handleDelete}
           sx={{
             position: 'absolute',
             inset: 0,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'flex-end',
-            pr: 2,
+            pr: 2.5,
             backgroundColor: 'error.main',
             color: 'error.contrastText',
+            cursor: 'pointer',
           }}
         >
           <DeleteIcon />
@@ -79,7 +92,7 @@ export function ExpenseRow({ expense, currentUserId, householdId, month, categor
       )}
       <Box
         ref={ref}
-        onClick={openDetail}
+        onClick={handleRowClick}
         sx={{
           display: 'flex',
           alignItems: 'center',
@@ -88,6 +101,7 @@ export function ExpenseRow({ expense, currentUserId, householdId, month, categor
           px: 2,
           backgroundColor: 'background.paper',
           transform: `translateX(${offsetX}px)`,
+          transition: isDragging ? 'none' : 'transform 0.2s ease-out',
           touchAction: 'pan-y',
           cursor: 'pointer',
         }}
