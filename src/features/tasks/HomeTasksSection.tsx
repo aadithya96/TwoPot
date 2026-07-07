@@ -21,7 +21,7 @@ export interface HomeTasksSectionProps {
 /**
  * Whether an open item is worth surfacing on Home: high priority, or due within
  * the week (incl. overdue). Shopping ("buy") items are excluded -- the home
- * dashboard is for todos and tasks, not the shopping list.
+ * dashboard is for tasks, not the shopping list.
  */
 function isUpcomingOrPriority(task: Task, horizon: string): boolean {
   if (task.done || task.kind === 'buy') return false
@@ -70,7 +70,7 @@ export function HomeTasksSection({ householdId, userId, members }: HomeTasksSect
   }
 
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 3, p: 2 }}>
+    <Paper variant="outlined" sx={{ p: 2 }}>
       <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
         <Typography variant="titleMedium">Upcoming &amp; priority</Typography>
         <Link component={RouterLink} to="/tasks" variant="labelLarge">
@@ -95,7 +95,7 @@ export function HomeTasksSection({ householdId, userId, members }: HomeTasksSect
         householdId={householdId}
         userId={userId}
         members={members}
-        kind={(editingTask?.kind as TaskKind | undefined) ?? 'todo'}
+        kind={(editingTask?.kind as TaskKind | undefined) ?? 'task'}
         task={editingTask}
       />
     </Paper>

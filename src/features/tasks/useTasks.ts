@@ -4,7 +4,7 @@ import { queryKeys } from '@/lib/queryKeys'
 import type { Task, TaskKind, TaskPriority } from '@/types/app'
 
 /**
- * Fetches every todo and task for a household. Both sections live in one table
+ * Fetches every task and shopping item for a household. Both sections live in one table
  * (distinguished by `kind`) and are fetched together so the page reads a single
  * list and splits it client-side. Open items first, then most recently created.
  */
@@ -26,7 +26,7 @@ export function useTasks(householdId: string | undefined): UseQueryResult<Task[]
   })
 }
 
-/** Input for adding a todo or task. */
+/** Input for adding a task or shopping item. */
 export interface CreateTaskInput {
   householdId: string
   createdBy: string
@@ -37,7 +37,7 @@ export interface CreateTaskInput {
   priority: TaskPriority
 }
 
-/** Creates a todo/task, invalidating the household's task list on success. */
+/** Creates a task, invalidating the household's task list on success. */
 export function useCreateTask() {
   const queryClient = useQueryClient()
 
@@ -65,7 +65,7 @@ export function useCreateTask() {
   })
 }
 
-/** Input for editing a todo/task's fields. */
+/** Input for editing a task's fields. */
 export interface UpdateTaskInput {
   taskId: string
   householdId: string
@@ -75,7 +75,7 @@ export interface UpdateTaskInput {
   priority: TaskPriority
 }
 
-/** Updates a todo/task's title, due date, assignee, and priority. */
+/** Updates a task's title, due date, assignee, and priority. */
 export function useUpdateTask() {
   const queryClient = useQueryClient()
 
@@ -102,7 +102,7 @@ export function useUpdateTask() {
   })
 }
 
-/** Toggles a todo/task's done flag, stamping/clearing `completed_at` to match. */
+/** Toggles a task's done flag, stamping/clearing `completed_at` to match. */
 export function useToggleTask() {
   const queryClient = useQueryClient()
 
@@ -131,7 +131,7 @@ export function useToggleTask() {
   })
 }
 
-/** Deletes a todo/task, invalidating the household's task list on success. */
+/** Deletes a task, invalidating the household's task list on success. */
 export function useDeleteTask() {
   const queryClient = useQueryClient()
 
