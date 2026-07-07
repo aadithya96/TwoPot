@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Box, Button, Divider, List, Paper, Skeleton, Stack, Typography } from '@mui/material'
+import { Box, Button, Divider, Paper, Skeleton, Stack, Typography } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import { useHouseholdStore } from '@/stores/householdStore'
 import { useCurrentUser } from '@/features/auth/useAuth'
@@ -78,7 +78,7 @@ function TaskSection({
           {emptyCopy}
         </Typography>
       ) : (
-        <List sx={{ px: 2, py: 0.5 }}>
+        <Box sx={{ px: 2, py: 0.5 }}>
           {tasks.map((task) => (
             <TaskRow
               key={task.id}
@@ -88,7 +88,7 @@ function TaskSection({
               onEdit={onEdit}
             />
           ))}
-        </List>
+        </Box>
       )}
     </Paper>
   )
