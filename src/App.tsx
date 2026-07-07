@@ -21,6 +21,9 @@ const GoalsPage = lazyWithRetry(() =>
 const MoviesPage = lazyWithRetry(() =>
   import('@/pages/MoviesPage').then((m) => ({ default: m.MoviesPage }))
 )
+const TasksPage = lazyWithRetry(() =>
+  import('@/pages/TasksPage').then((m) => ({ default: m.TasksPage }))
+)
 const InsightsPage = lazyWithRetry(() =>
   import('@/pages/InsightsPage').then((m) => ({ default: m.InsightsPage }))
 )
@@ -50,6 +53,7 @@ export const router = createBrowserRouter([
       { path: 'budgets', element: <BudgetsPage /> },
       { path: 'goals', element: <GoalsPage /> },
       { path: 'movies', element: <MoviesPage /> },
+      { path: 'tasks', element: <TasksPage /> },
       { path: 'insights', element: <InsightsPage /> },
       { path: 'settings', element: <SettingsPage /> },
       { path: 'settings/notifications', element: <NotificationsPage /> },
