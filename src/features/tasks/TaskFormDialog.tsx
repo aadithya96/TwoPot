@@ -63,7 +63,7 @@ export function TaskFormDialog({
   }
 
   const isEditing = Boolean(task)
-  const label = kind === 'task' ? 'task' : 'todo'
+  const label = kind === 'task' ? 'task' : kind === 'buy' ? 'item' : 'todo'
   const trimmedTitle = title.trim()
   const isValid = trimmedTitle.length > 0
   const isPending = createTask.isPending || updateTask.isPending

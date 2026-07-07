@@ -21,8 +21,8 @@ export type MovieWithRatings = Movie & {
   ratings: MovieRating[]
 }
 export type Task = Database['public']['Tables']['tasks']['Row']
-/** A todo/task item's two sections on the tasks page. */
-export type TaskKind = 'todo' | 'task'
+/** Which section a task item belongs to on the tasks page. */
+export type TaskKind = 'todo' | 'task' | 'buy'
 export type TaskPriority = 'low' | 'medium' | 'high'
 export type Settlement = Database['public']['Tables']['settlements']['Row']
 export type PushSubscriptionRow = Database['public']['Tables']['push_subscriptions']['Row']
