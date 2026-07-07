@@ -32,6 +32,8 @@ import TrackChangesIcon from '@mui/icons-material/TrackChanges'
 import TrackChangesOutlinedIcon from '@mui/icons-material/TrackChangesOutlined'
 import MovieIcon from '@mui/icons-material/Movie'
 import MovieOutlinedIcon from '@mui/icons-material/MovieOutlined'
+import ChecklistIcon from '@mui/icons-material/Checklist'
+import ChecklistOutlinedIcon from '@mui/icons-material/ChecklistOutlined'
 import InsightsIcon from '@mui/icons-material/Insights'
 import InsightsOutlinedIcon from '@mui/icons-material/InsightsOutlined'
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
@@ -44,6 +46,7 @@ const NAV_ITEMS = [
   { label: 'Budgets', path: '/budgets', Icon: PieChartOutlineIcon, ActiveIcon: PieChartIcon },
   { label: 'Goals', path: '/goals', Icon: TrackChangesOutlinedIcon, ActiveIcon: TrackChangesIcon },
   { label: 'Movies', path: '/movies', Icon: MovieOutlinedIcon, ActiveIcon: MovieIcon },
+  { label: 'Tasks', path: '/tasks', Icon: ChecklistOutlinedIcon, ActiveIcon: ChecklistIcon },
   { label: 'Insights', path: '/insights', Icon: InsightsOutlinedIcon, ActiveIcon: InsightsIcon },
   { label: 'Settings', path: '/settings', Icon: SettingsOutlinedIcon, ActiveIcon: SettingsIcon },
 ] as const

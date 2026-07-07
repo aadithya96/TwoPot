@@ -11,8 +11,6 @@ import TrackChangesIcon from '@mui/icons-material/TrackChanges'
 import TrackChangesOutlinedIcon from '@mui/icons-material/TrackChangesOutlined'
 import MovieIcon from '@mui/icons-material/Movie'
 import MovieOutlinedIcon from '@mui/icons-material/MovieOutlined'
-import ChecklistIcon from '@mui/icons-material/Checklist'
-import ChecklistOutlinedIcon from '@mui/icons-material/ChecklistOutlined'
 
 const TABS = [
   { label: 'Home', path: '/', Icon: HomeOutlinedIcon, ActiveIcon: HomeIcon },
@@ -25,7 +23,6 @@ const TABS = [
     ActiveIcon: TrackChangesIcon,
   },
   { label: 'Movies', path: '/movies', Icon: MovieOutlinedIcon, ActiveIcon: MovieIcon },
-  { label: 'Tasks', path: '/tasks', Icon: ChecklistOutlinedIcon, ActiveIcon: ChecklistIcon },
 ] as const
 
 /** Fixed bottom tab bar for the four root routes, synced with the router location. */
