@@ -73,14 +73,13 @@ export function TaskRow({ task, householdId, members, onEdit }: TaskRowProps) {
           </Menu>
         </>
       }
-      sx={{ alignItems: 'flex-start', py: 0.5 }}
+      sx={{ alignItems: 'center', py: 0.5 }}
     >
       <Checkbox
         checked={task.done}
         onChange={(event) =>
           toggleTask.mutate({ taskId: task.id, householdId, done: event.target.checked })
         }
-        sx={{ mt: -0.25 }}
         slotProps={{ input: { 'aria-label': `Mark "${task.title}" done` } }}
       />
       <Box sx={{ flex: 1, minWidth: 0, pr: 5 }}>
