@@ -22,7 +22,7 @@ import { useHouseholdStore } from '@/stores/householdStore'
 import { formatMonth, formatRelativeDate, monthKey, shiftMonth } from '@/lib/dates'
 import { ExpenseRow } from './ExpenseRow'
 import { AddExpenseSheet } from './AddExpenseSheet'
-import { useExpenses } from './useExpenses'
+import { ALL_MONTHS, useExpenses } from './useExpenses'
 import { CategoryIcon } from '@/components/CategoryIcon'
 import type { Category } from '@/types/app'
 
@@ -40,12 +40,16 @@ type OwnerFilter = 'all' | 'shared' | 'personal'
 /** Month-navigable list of expenses with search/filter controls, grouped by date. */
 export function ExpenseList({ householdId, currentUserId, categories }: ExpenseListProps) {
   const [month, setMonth] = useState(() => monthKey())
+  // "month" scopes to the selected month; "all" shows every expense across all
+  // time — useful for finding expenses whose date landed in another month.
+  const [range, setRange] = useState<'month' | 'all'>('month')
   const [addOpen, setAddOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [categoryId, setCategoryId] = useState<string>('all')
   const [payerId, setPayerId] = useState<string>('all')
   const [owner, setOwner] = useState<OwnerFilter>('all')
-  const { data: expenses, isLoading } = useExpenses(householdId, month)
+  const activeRange = range === 'all' ? ALL_MONTHS : month
+  const { data: expenses, isLoading } = useExpenses(householdId, activeRange)
   const members = useHouseholdStore((state) => state.members)
 
   const hasActiveFilters = query.trim() !== '' || categoryId !== 'all' || payerId !== 'all' || owner !== 'all'
@@ -87,14 +91,30 @@ export function ExpenseList({ householdId, currentUserId, categories }: ExpenseL
 
   return (
     <Box>
-      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'center', py: 1 }}>
-        <IconButton onClick={() => setMonth((current) => shiftMonth(current, -1))} aria-label="Previous month">
-          <ChevronLeftIcon />
-        </IconButton>
-        <Typography variant="titleMedium">{formatMonth(month)}</Typography>
-        <IconButton onClick={() => setMonth((current) => shiftMonth(current, 1))} aria-label="Next month">
-          <ChevronRightIcon />
-        </IconButton>
+      <Stack spacing={1} sx={{ alignItems: 'center', py: 1 }}>
+        <ToggleButtonGroup
+          size="small"
+          exclusive
+          value={range}
+          onChange={(_event, next: 'month' | 'all' | null) => next && setRange(next)}
+          aria-label="Expense date range"
+        >
+          <ToggleButton value="month">Month</ToggleButton>
+          <ToggleButton value="all">All time</ToggleButton>
+        </ToggleButtonGroup>
+        {range === 'month' ? (
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'center' }}>
+            <IconButton onClick={() => setMonth((current) => shiftMonth(current, -1))} aria-label="Previous month">
+              <ChevronLeftIcon />
+            </IconButton>
+            <Typography variant="titleMedium">{formatMonth(month)}</Typography>
+            <IconButton onClick={() => setMonth((current) => shiftMonth(current, 1))} aria-label="Next month">
+              <ChevronRightIcon />
+            </IconButton>
+          </Stack>
+        ) : (
+          <Typography variant="titleMedium">All expenses</Typography>
+        )}
       </Stack>
 
       {monthTotal > 0 && (
@@ -234,7 +254,7 @@ export function ExpenseList({ householdId, currentUserId, categories }: ExpenseL
                 expense={expense}
                 currentUserId={currentUserId}
                 householdId={householdId}
-                month={month}
+                month={activeRange}
                 categories={categories}
               />
             ))}

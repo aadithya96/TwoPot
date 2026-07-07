@@ -9,6 +9,8 @@ export const queryKeys = {
   categorySuggestionHistory: (householdId: string) =>
     ['categorySuggestionHistory', householdId] as const,
   expenses: (householdId: string, month: string) => ['expenses', householdId, month] as const,
+  /** Prefix key matching every expense list for a household (all months plus the all-time view). */
+  expensesForHousehold: (householdId: string) => ['expenses', householdId] as const,
   expense: (expenseId: string) => ['expense', expenseId] as const,
   recurringExpenses: (householdId: string) => ['recurringExpenses', householdId] as const,
   budgetUsage: (householdId: string) => ['budgetUsage', householdId] as const,

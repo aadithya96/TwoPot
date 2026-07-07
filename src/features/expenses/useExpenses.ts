@@ -24,7 +24,13 @@ export interface ExpenseInput {
   receiptUrl: string | null
 }
 
-/** Fetches all expenses for a household within the given "YYYY-MM" month, newest first. */
+/** Sentinel month value for {@link useExpenses} that fetches every expense, ignoring the date range. */
+export const ALL_MONTHS = 'all'
+
+/**
+ * Fetches expenses for a household, newest first. Pass a "YYYY-MM" month to scope
+ * to that month, or {@link ALL_MONTHS} to fetch every expense across all time.
+ */
 export function useExpenses(
   householdId: string | undefined,
   month: string
@@ -33,14 +39,12 @@ export function useExpenses(
     queryKey: queryKeys.expenses(householdId ?? 'anonymous', month),
     queryFn: async () => {
       if (!householdId) return []
-      const { start, end } = monthRange(month)
-      const { data, error } = await supabase
-        .from('expenses')
-        .select(EXPENSE_SELECT)
-        .eq('household_id', householdId)
-        .gte('date', start)
-        .lte('date', end)
-        .order('date', { ascending: false })
+      let query = supabase.from('expenses').select(EXPENSE_SELECT).eq('household_id', householdId)
+      if (month !== ALL_MONTHS) {
+        const { start, end } = monthRange(month)
+        query = query.gte('date', start).lte('date', end)
+      }
+      const { data, error } = await query.order('date', { ascending: false })
       if (error) throw error
       return data as unknown as ExpenseWithRelations[]
     },
@@ -78,7 +82,7 @@ export function useAddExpense() {
     },
     onSuccess: (_data, variables) => {
       const month = variables.date.slice(0, 7)
-      void queryClient.invalidateQueries({ queryKey: queryKeys.expenses(variables.householdId, month) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.expensesForHousehold(variables.householdId) })
       void queryClient.invalidateQueries({ queryKey: queryKeys.budgetUsage(variables.householdId) })
       void queryClient.invalidateQueries({ queryKey: queryKeys.settlement(variables.householdId, month) })
       void queryClient.invalidateQueries({ queryKey: queryKeys.balanceTrend(variables.householdId) })
@@ -122,7 +126,7 @@ export function useUpdateExpense() {
     },
     onSuccess: (_data, variables) => {
       const month = variables.date.slice(0, 7)
-      void queryClient.invalidateQueries({ queryKey: queryKeys.expenses(variables.householdId, month) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.expensesForHousehold(variables.householdId) })
       void queryClient.invalidateQueries({ queryKey: queryKeys.budgetUsage(variables.householdId) })
       void queryClient.invalidateQueries({ queryKey: queryKeys.expense(variables.id) })
       void queryClient.invalidateQueries({ queryKey: queryKeys.settlement(variables.householdId, month) })
@@ -162,7 +166,7 @@ export function useDeleteExpense() {
       })
     },
     onSettled: (_data, _error, variables) => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.expenses(variables.householdId, variables.month) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.expensesForHousehold(variables.householdId) })
       void queryClient.invalidateQueries({ queryKey: queryKeys.budgetUsage(variables.householdId) })
       void queryClient.invalidateQueries({ queryKey: queryKeys.settlement(variables.householdId, variables.month) })
       void queryClient.invalidateQueries({ queryKey: queryKeys.balanceTrend(variables.householdId) })
