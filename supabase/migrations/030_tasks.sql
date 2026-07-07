@@ -1,8 +1,9 @@
 -- 030_tasks.sql
--- A shared checklist for the household, rendered on one page as two sections:
--- quick "Todos" and a more detailed "Tasks" list. Both live in a single table
--- and are told apart by the `kind` discriminator, since they share every field
--- (title, done flag, optional due date, optional assignee, priority).
+-- A shared checklist for the household, rendered on one page as three sections:
+-- quick "Todos", a more detailed "Tasks" list, and a "Things to buy" shopping
+-- list. All live in a single table and are told apart by the `kind`
+-- discriminator, since they share every field (title, done flag, optional due
+-- date, optional assignee, priority).
 --
 -- household_id is denormalised onto every row so the realtime client can filter
 -- changes with the same household_id=eq.<id> predicate it uses for every other
@@ -12,7 +13,7 @@ create table public.tasks (
   id            uuid primary key default gen_random_uuid(),
   household_id  uuid not null references public.households(id) on delete cascade,
   -- Which section the item belongs to on the tasks page.
-  kind          text not null default 'todo' check (kind in ('todo', 'task')),
+  kind          text not null default 'todo' check (kind in ('todo', 'task', 'buy')),
   title         text not null,
   done          boolean not null default false,
   completed_at  timestamptz,

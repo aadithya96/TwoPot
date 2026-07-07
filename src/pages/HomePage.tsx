@@ -26,6 +26,7 @@ import { GoalCard, useGoals } from '@/features/goals'
 import { useBalanceTrend } from '@/features/settlement/useSettlement'
 import { usePotConfig } from '@/features/pots/usePots'
 import { useCurrentUser } from '@/features/auth'
+import { HomeTasksSection } from '@/features/tasks'
 import { SetupChecklist, type SetupStep } from '@/features/home/SetupChecklist'
 import { SETUP_DISMISSED_KEY } from '@/lib/storageKeys'
 import { lazyWithRetry } from '@/lib/lazyWithRetry'
@@ -64,7 +65,10 @@ export function HomePage() {
   const month = monthKey()
 
   const { data: currentUser } = useCurrentUser()
-  const { data: expenses, isLoading: isExpensesLoading } = useExpenses(householdId ?? undefined, month)
+  const { data: expenses, isLoading: isExpensesLoading } = useExpenses(
+    householdId ?? undefined,
+    month
+  )
   const { data: budgetUsage } = useBudgetUsage(householdId ?? undefined)
   const { data: categories } = useCategories(householdId ?? undefined)
   const { data: goals, isLoading: isGoalsLoading } = useGoals(householdId ?? undefined)
@@ -270,10 +274,15 @@ export function HomePage() {
                 severity={row.spent_amount >= row.budget_amount ? 'error' : 'warning'}
                 onClose={() => setDismissedAlerts((prev) => new Set(prev).add(row.category_id))}
               >
-                {row.category_name}: {formatINR(row.spent_amount)} of {formatINR(row.budget_amount)} spent
+                {row.category_name}: {formatINR(row.spent_amount)} of {formatINR(row.budget_amount)}{' '}
+                spent
               </Alert>
             ))}
         </Stack>
+      )}
+
+      {householdId && currentUser && (
+        <HomeTasksSection householdId={householdId} userId={currentUser.id} members={members} />
       )}
 
       <Box
@@ -284,89 +293,89 @@ export function HomePage() {
           alignItems: 'start',
         }}
       >
-      <Box>
-        <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
-          <Typography variant="titleMedium">Recent expenses</Typography>
-          <Link component={RouterLink} to="/expenses" variant="labelLarge">
-            See all
-          </Link>
-        </Stack>
-        {isExpensesLoading ? (
-          <Stack spacing={1} sx={{ mt: 1 }}>
-            {[0, 1, 2].map((i) => (
-              <Skeleton key={i} variant="rounded" height={56} />
-            ))}
+        <Box>
+          <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <Typography variant="titleMedium">Recent expenses</Typography>
+            <Link component={RouterLink} to="/expenses" variant="labelLarge">
+              See all
+            </Link>
           </Stack>
-        ) : recentExpenses.length === 0 ? (
-          <Typography variant="bodyMedium" color="text.secondary" sx={{ mt: 1 }}>
-            No expenses yet this month.
-          </Typography>
-        ) : (
-          <Stack spacing={1} sx={{ mt: 1 }}>
-            {recentExpenses.map((expense) => (
-              <ExpenseRow
-                key={expense.id}
-                expense={expense}
-                currentUserId={currentUser?.id ?? ''}
-                householdId={householdId ?? ''}
-                month={month}
-                categories={categories ?? []}
-              />
-            ))}
-          </Stack>
-        )}
-      </Box>
+          {isExpensesLoading ? (
+            <Stack spacing={1} sx={{ mt: 1 }}>
+              {[0, 1, 2].map((i) => (
+                <Skeleton key={i} variant="rounded" height={56} />
+              ))}
+            </Stack>
+          ) : recentExpenses.length === 0 ? (
+            <Typography variant="bodyMedium" color="text.secondary" sx={{ mt: 1 }}>
+              No expenses yet this month.
+            </Typography>
+          ) : (
+            <Stack spacing={1} sx={{ mt: 1 }}>
+              {recentExpenses.map((expense) => (
+                <ExpenseRow
+                  key={expense.id}
+                  expense={expense}
+                  currentUserId={currentUser?.id ?? ''}
+                  householdId={householdId ?? ''}
+                  month={month}
+                  categories={categories ?? []}
+                />
+              ))}
+            </Stack>
+          )}
+        </Box>
 
-      {/* minWidth: 0 keeps the horizontally-scrolling goals row from widening
+        {/* minWidth: 0 keeps the horizontally-scrolling goals row from widening
           this grid track (grid items default to min-width: auto), which made
           the whole page scroll sideways instead of just the row. */}
-      <Box sx={{ minWidth: 0 }}>
-        <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
-          <Typography variant="titleMedium">Goals</Typography>
-          <Link component={RouterLink} to="/goals" variant="labelLarge">
-            See all
-          </Link>
-        </Stack>
-        {isGoalsLoading ? (
-          <Stack
-            direction={{ xs: 'row', md: 'column' }}
-            spacing={1.5}
-            sx={{ mt: 1, overflowX: { xs: 'auto', md: 'visible' } }}
-          >
-            {[0, 1].map((i) => (
-              <Skeleton
-                key={i}
-                variant="rounded"
-                height={160}
-                sx={{ width: { xs: 200, md: '100%' }, flexShrink: 0 }}
-              />
-            ))}
+        <Box sx={{ minWidth: 0 }}>
+          <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <Typography variant="titleMedium">Goals</Typography>
+            <Link component={RouterLink} to="/goals" variant="labelLarge">
+              See all
+            </Link>
           </Stack>
-        ) : !goals || goals.length === 0 ? (
-          <Typography variant="bodyMedium" color="text.secondary" sx={{ mt: 1 }}>
-            No savings goals yet.
-          </Typography>
-        ) : (
-          <Stack
-            direction={{ xs: 'row', md: 'column' }}
-            spacing={1.5}
-            sx={{
-              mt: 1,
-              overflowX: { xs: 'auto', md: 'visible' },
-              pb: { xs: 1, md: 0 },
-            }}
-          >
-            {goals.map((goal) => (
-              <Box
-                key={goal.id}
-                sx={{ minWidth: { xs: 220, md: 0 }, width: { md: '100%' }, flexShrink: 0 }}
-              >
-                <GoalCard goal={goal} members={members} />
-              </Box>
-            ))}
-          </Stack>
-        )}
-      </Box>
+          {isGoalsLoading ? (
+            <Stack
+              direction={{ xs: 'row', md: 'column' }}
+              spacing={1.5}
+              sx={{ mt: 1, overflowX: { xs: 'auto', md: 'visible' } }}
+            >
+              {[0, 1].map((i) => (
+                <Skeleton
+                  key={i}
+                  variant="rounded"
+                  height={160}
+                  sx={{ width: { xs: 200, md: '100%' }, flexShrink: 0 }}
+                />
+              ))}
+            </Stack>
+          ) : !goals || goals.length === 0 ? (
+            <Typography variant="bodyMedium" color="text.secondary" sx={{ mt: 1 }}>
+              No savings goals yet.
+            </Typography>
+          ) : (
+            <Stack
+              direction={{ xs: 'row', md: 'column' }}
+              spacing={1.5}
+              sx={{
+                mt: 1,
+                overflowX: { xs: 'auto', md: 'visible' },
+                pb: { xs: 1, md: 0 },
+              }}
+            >
+              {goals.map((goal) => (
+                <Box
+                  key={goal.id}
+                  sx={{ minWidth: { xs: 220, md: 0 }, width: { md: '100%' }, flexShrink: 0 }}
+                >
+                  <GoalCard goal={goal} members={members} />
+                </Box>
+              ))}
+            </Stack>
+          )}
+        </Box>
       </Box>
 
       {householdId && members.length > 1 && (

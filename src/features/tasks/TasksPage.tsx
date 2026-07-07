@@ -95,8 +95,9 @@ function TaskSection({
 }
 
 /**
- * Tasks hub: two shared, realtime-synced sections on one page -- quick "Todos"
- * and a "Tasks" list -- each supporting due dates, an assignee, and a priority.
+ * Tasks hub: three shared, realtime-synced sections on one page -- quick
+ * "Todos", a "Tasks" list, and a "Things to buy" shopping list -- each
+ * supporting due dates, an assignee, and a priority.
  */
 export function TasksPage() {
   const householdId = useHouseholdStore((state) => state.householdId)
@@ -110,11 +111,12 @@ export function TasksPage() {
 
   useRealtimeTasks(householdId ?? undefined)
 
-  const { todos, taskItems } = useMemo(() => {
+  const { todos, taskItems, buyItems } = useMemo(() => {
     const all = tasks ?? []
     return {
       todos: all.filter((task) => task.kind === 'todo').sort(compareTasks),
       taskItems: all.filter((task) => task.kind === 'task').sort(compareTasks),
+      buyItems: all.filter((task) => task.kind === 'buy').sort(compareTasks),
     }
   }, [tasks])
 
@@ -135,7 +137,7 @@ export function TasksPage() {
   return (
     <Box sx={{ p: 2, pb: 10, maxWidth: 760, mx: 'auto' }}>
       <Typography variant="headlineSmall" sx={{ mb: 2 }}>
-        Todos &amp; Tasks
+        Your lists
       </Typography>
 
       <Stack spacing={3}>
@@ -155,6 +157,17 @@ export function TasksPage() {
           title="Tasks"
           emptyCopy="No tasks yet. Add one with a due date, assignee, and priority."
           tasks={taskItems}
+          isLoading={isLoading}
+          householdId={householdId}
+          members={members}
+          onAdd={handleAdd}
+          onEdit={handleEdit}
+        />
+        <TaskSection
+          kind="buy"
+          title="Things to buy"
+          emptyCopy="Nothing on the shopping list yet. Add something you need to buy."
+          tasks={buyItems}
           isLoading={isLoading}
           householdId={householdId}
           members={members}
