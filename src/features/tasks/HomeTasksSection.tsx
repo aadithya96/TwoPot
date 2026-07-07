@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
-import { List, Link, Paper, Stack, Typography } from '@mui/material'
+import { Box, Link, Paper, Stack, Typography } from '@mui/material'
 import type { Profile, Task, TaskKind, TaskPriority } from '@/types/app'
 import { useTasks } from './useTasks'
 import { useRealtimeTasks } from './useRealtimeTasks'
@@ -74,7 +74,7 @@ export function HomeTasksSection({ householdId, userId, members }: HomeTasksSect
             {label}
           </Typography>
         )}
-        <List sx={{ py: 0.5 }}>
+        <Box sx={{ py: 0.5 }}>
           {items.map((task) => (
             <TaskRow
               key={task.id}
@@ -84,7 +84,7 @@ export function HomeTasksSection({ householdId, userId, members }: HomeTasksSect
               onEdit={handleEdit}
             />
           ))}
-        </List>
+        </Box>
       </>
     )
 
