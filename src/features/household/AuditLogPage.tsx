@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   Avatar,
   Box,
@@ -6,12 +7,17 @@ import {
   List,
   ListItem,
   ListItemAvatar,
+  ListItemButton,
   ListItemText,
   Typography,
 } from '@mui/material'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import { useHouseholdStore } from '@/stores/householdStore'
 import { useAuditLog } from './useAuditLog'
 import { describeAuditEntry } from './activityFeed'
+import { isDeletedExpenseEntry } from './deletedExpense'
+import { DeletedExpenseSheet } from './DeletedExpenseSheet'
+import type { AuditLogEntryWithActor } from '@/types/app'
 
 /** Formats a timestamp as an absolute, locale-aware date + time. */
 function formatTimestamp(iso: string): string {
@@ -27,6 +33,7 @@ function formatTimestamp(iso: string): string {
 export function AuditLogPage() {
   const householdId = useHouseholdStore((state) => state.householdId)
   const { data: entries, isLoading, isError } = useAuditLog(householdId ?? undefined)
+  const [selected, setSelected] = useState<AuditLogEntryWithActor | null>(null)
 
   return (
     <Box
@@ -56,19 +63,36 @@ export function AuditLogPage() {
       ) : entries && entries.length > 0 ? (
         <Card>
           <List disablePadding>
-            {entries.map((entry) => (
-              <ListItem key={entry.id} divider>
-                <ListItemAvatar>
-                  <Avatar src={entry.actor?.avatar_url ?? undefined}>
-                    {entry.actor?.display_name?.[0] ?? '?'}
-                  </Avatar>
-                </ListItemAvatar>
-                <ListItemText
-                  primary={describeAuditEntry(entry)}
-                  secondary={`${entry.actor?.display_name ?? 'Someone'} · ${formatTimestamp(entry.created_at)}`}
-                />
-              </ListItem>
-            ))}
+            {entries.map((entry) => {
+              const secondary = `${entry.actor?.display_name ?? 'Someone'} · ${formatTimestamp(entry.created_at)}`
+              // Deleted expenses can be inspected and restored; tapping opens
+              // their detail sheet. Other entries are informational only.
+              if (isDeletedExpenseEntry(entry)) {
+                return (
+                  <ListItem key={entry.id} divider disablePadding>
+                    <ListItemButton onClick={() => setSelected(entry)}>
+                      <ListItemAvatar>
+                        <Avatar src={entry.actor?.avatar_url ?? undefined}>
+                          {entry.actor?.display_name?.[0] ?? '?'}
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText primary={describeAuditEntry(entry)} secondary={secondary} />
+                      <ChevronRightIcon color="disabled" />
+                    </ListItemButton>
+                  </ListItem>
+                )
+              }
+              return (
+                <ListItem key={entry.id} divider>
+                  <ListItemAvatar>
+                    <Avatar src={entry.actor?.avatar_url ?? undefined}>
+                      {entry.actor?.display_name?.[0] ?? '?'}
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText primary={describeAuditEntry(entry)} secondary={secondary} />
+                </ListItem>
+              )
+            })}
           </List>
         </Card>
       ) : (
@@ -79,6 +103,15 @@ export function AuditLogPage() {
             </Typography>
           </Box>
         </Card>
+      )}
+
+      {householdId && selected && (
+        <DeletedExpenseSheet
+          open={Boolean(selected)}
+          onClose={() => setSelected(null)}
+          entry={selected}
+          householdId={householdId}
+        />
       )}
     </Box>
   )

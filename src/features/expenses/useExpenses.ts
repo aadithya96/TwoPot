@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
 import { monthRange } from '@/lib/dates'
 import { notifyPartnerOfExpense } from '@/features/notifications/notifyPartner'
-import type { ExpenseWithRelations } from '@/types/app'
+import type { Expense, ExpenseWithRelations } from '@/types/app'
 
 const EXPENSE_SELECT = '*, category:categories(*), payer:profiles!paid_by(id, display_name, avatar_url)'
 
@@ -170,6 +170,35 @@ export function useDeleteExpense() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.budgetUsage(variables.householdId) })
       void queryClient.invalidateQueries({ queryKey: queryKeys.settlement(variables.householdId, variables.month) })
       void queryClient.invalidateQueries({ queryKey: queryKeys.balanceTrend(variables.householdId) })
+    },
+  })
+}
+
+/**
+ * Restores a previously deleted expense by re-inserting the row snapshot the
+ * audit log captured at delete time (see migration 033). The original id is
+ * preserved, so restoring the same deletion twice fails with a unique-violation
+ * rather than duplicating the expense. Invalidates the same caches an add does.
+ */
+export function useRestoreExpense() {
+  const queryClient = useQueryClient()
+
+  return useMutation<Expense, Error, { snapshot: Expense }>({
+    mutationFn: async ({ snapshot }) => {
+      const { data, error } = await supabase
+        .from('expenses')
+        .insert(snapshot)
+        .select('*')
+        .single()
+      if (error) throw error
+      return data as Expense
+    },
+    onSuccess: (data) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.expensesForHousehold(data.household_id) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.budgetUsage(data.household_id) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.settlement(data.household_id, data.date.slice(0, 7)) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.balanceTrend(data.household_id) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.auditLog(data.household_id) })
     },
   })
 }

@@ -167,7 +167,7 @@ export function ExpenseDetailSheet({
         <Box sx={{ p: 3, maxWidth: 320 }}>
           <Typography variant="titleMedium">Delete this expense?</Typography>
           <Typography variant="bodyMedium" color="text.secondary" sx={{ mt: 1 }}>
-            This can&apos;t be undone.
+            You can restore it later from the activity log.
           </Typography>
           <Stack direction="row" spacing={1.5} sx={{ mt: 3 }}>
             <Button fullWidth onClick={() => setConfirmOpen(false)}>
